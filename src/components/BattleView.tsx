@@ -19,19 +19,13 @@ type Props = {
 };
 
 // -------------------- UI helpers --------------------
-const TEAM_RING: Record<TeamId, string> = {
-  1: "ring-2 ring-blue-400/70",
-  2: "ring-2 ring-red-400/70",
-  3: "ring-2 ring-emerald-400/70",
-  4: "ring-2 ring-purple-400/70",
-  5: "ring-2 ring-amber-400/70",
-};
-const TEAM_BORDER: Record<TeamId, string> = {
-  1: "border-blue-500/40",
-  2: "border-red-500/40",
-  3: "border-emerald-500/40",
-  4: "border-purple-500/40",
-  5: "border-amber-500/40",
+// Subtle team-tinted background (same idea as Roster soft BG)
+const TEAM_BG_SOFT: Record<TeamId, string> = {
+  1: "bg-blue-500/10",
+  2: "bg-red-500/10",
+  3: "bg-emerald-500/10",
+  4: "bg-purple-500/10",
+  5: "bg-amber-500/10",
 };
 const TEAM_BG: Record<TeamId, string> = {
   1: "bg-blue-600",
@@ -115,37 +109,36 @@ export default function BattleView({
     setLog((prev) => [entry, ...prev].slice(0, 200));
   }
 
-  // When turn (activeId) changes, auto-select attacker, their last attack, and last target
+  // 🔁 When the turn changes, force UI to follow the active creature
   useEffect(() => {
-    const currentId = attackerId ?? activeId ?? null;
-    if (!currentId) return;
-    const attacker = pool.find((c) => c.id === currentId);
-    if (!attacker) return;
+    if (!activeId) return;
+    // 1) set current attacker to the active creature
+    setAttackerId(activeId);
 
-    // attacker selection
-    setAttackerId(currentId);
+    // 2) choose that attacker's last-used attack (or first)
+    const attacker = pool.find((c) => c.id === activeId);
+    if (attacker) {
+      const lastAtk = lastAttackByAttacker[activeId];
+      const chosenAtk =
+        attacker.attacks.find((a) => a.id === lastAtk)?.id ??
+        attacker.attacks[0]?.id ??
+        "";
+      setAttackChoice(chosenAtk);
 
-    // attack selection
-    const lastAtk = lastAttackByAttacker[currentId];
-    const defaultAtk =
-      attacker.attacks.find((a) => a.id === lastAtk)?.id ??
-      attacker.attacks[0]?.id ??
-      "";
-    setAttackChoice(defaultAtk);
+      // 3) choose last-used target, else an enemy team, else the first other creature
+      const lastTgt = lastTargetByAttacker[activeId];
+      let chosenTarget =
+        pool.find((c) => c.id === lastTgt)?.id ?? null;
 
-    // target selection: prefer last target; otherwise pick first enemy team or first available
-    const lastTgt = lastTargetByAttacker[currentId];
-    let defaultTarget: string | null =
-      pool.find((c) => c.id === lastTgt)?.id ?? null;
-
-    if (!defaultTarget) {
-      const enemy = pool.find(
-        (c) => c.id !== currentId && (c.team ?? 1) !== (attacker.team ?? 1)
-      );
-      defaultTarget = enemy?.id ?? pool.find((c) => c.id !== currentId)?.id ?? null;
+      if (!chosenTarget) {
+        const enemy = pool.find(
+          (c) => c.id !== activeId && (c.team ?? 1) !== (attacker.team ?? 1)
+        );
+        chosenTarget = enemy?.id ?? pool.find((c) => c.id !== activeId)?.id ?? null;
+      }
+      setTargetId(chosenTarget);
     }
-    setTargetId(defaultTarget);
-  }, [activeId, attackerId, pool, lastAttackByAttacker, lastTargetByAttacker]);
+  }, [activeId, pool, lastAttackByAttacker, lastTargetByAttacker]);
 
   function rollAllInitiative() {
     const next = combatants.map((c) =>
@@ -263,7 +256,6 @@ export default function BattleView({
   function applyBackground() {
     const v = bgInput.trim();
     if (!v) return;
-    // Override body background; this will visually dominate the gradient
     document.body.style.background = v;
   }
 
@@ -307,9 +299,9 @@ export default function BattleView({
           return (
             <div
               key={c.id}
-              className={`card min-w-[220px] border ${TEAM_BORDER[team]} ${
-                active ? "border-indigo-400 ring-2 ring-indigo-500/50" : ""
-              } ${TEAM_RING[team]}`}
+              className={`card min-w-[220px] ${TEAM_BG_SOFT[team]} ${
+                active ? "ring-2 ring-indigo-400" : ""
+              }`}
             >
               <div className="flex items-center justify-between">
                 <div className="font-semibold">{c.name}</div>
@@ -358,7 +350,7 @@ export default function BattleView({
             <label className="label">Attacker</label>
             <select
               className="select w-full"
-              value={attackerId ?? activeId ?? ""}
+              value={attackerId ?? ""}
               onChange={(e) => setAttackerId(e.target.value || null)}
             >
               {pool.map((c) => (
@@ -448,7 +440,7 @@ export default function BattleView({
             </div>
           </div>
 
-          <div className="card bg-slate-950/60 border-slate-800 min-h-[160px] max-h-80 overflow-auto">
+          <div className="card bg-blue-500/10 border-slate-800 min-h-[160px] max-h-80 overflow-auto">
             {log.length === 0 ? (
               <p className="text-slate-400 text-sm px-3 py-2">No events yet…</p>
             ) : (

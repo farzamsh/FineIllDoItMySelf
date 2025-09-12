@@ -55,7 +55,7 @@ function Layout({
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex items-center justify-between h-14">
             <h1 className="text-sm md:text-base font-semibold tracking-wide">
-              ⚔️ DnD Combat Manager 22 2
+              ⚔️ DnD Combat Manager
             </h1>
             <nav className="flex flex-wrap gap-2 text-sm">
               {/* New flow tabs */}
@@ -67,7 +67,7 @@ function Layout({
               </TabButton>
 
               {/* Legacy tabs (keep for now) */}
-              <TabButton
+              {/* <TabButton
                 active={tab === "encounter"}
                 onClick={() => setTab("encounter")}
               >
@@ -78,12 +78,12 @@ function Layout({
                 onClick={() => setTab("initiative")}
               >
                 ⏱️ Initiative (old)
-              </TabButton>
+              </TabButton> */}
 
               {/* Dice tab */}
-              <TabButton active={tab === "dice"} onClick={() => setTab("dice")}>
+              {/* <TabButton active={tab === "dice"} onClick={() => setTab("dice")}>
                 🎲 Dice567890
-              </TabButton>
+              </TabButton> */}
             </nav>
           </div>
         </div>
