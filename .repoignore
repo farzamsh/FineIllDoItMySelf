@@ -1,0 +1,27 @@
+# dependencies
+/node_modules
+
+# production build
+/dist
+
+# misc
+.DS_Store
+Thumbs.db
+
+# local env files
+.env
+.env.local
+.env.*.local
+
+# IDE / editor folders
+.vscode/
+.idea/
+*.log
+
+# test coverage
+/coverage
+
+# lock files (optional, if you don’t want them in repo)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
