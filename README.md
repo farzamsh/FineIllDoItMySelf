@@ -20,7 +20,7 @@ Track initiative, rolls, and damage — all stored locally so your PCs never van
 1. Clone the repo:
 
    ```bash
-   git clone https://github.com/farzamsh/FineIllDoItMySelf
+   git clone https://github.com/farzamsh/FineIllDoItMySelf.git
    cd FineIllDoItMySelf
    ```
 
@@ -28,7 +28,7 @@ Track initiative, rolls, and damage — all stored locally so your PCs never van
 
    ```bash
    ssh -T git@github.com
-   git clone git@github.com:farzamsh/FineIllDoItMySelf
+   git clone git@github.com:farzamsh/FineIllDoItMySelf.git
    cd FineIllDoItMySelf
    ```
 
