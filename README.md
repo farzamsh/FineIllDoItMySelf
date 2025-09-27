@@ -111,11 +111,11 @@ If you have ideas for new features or better UI for logs, feel free to open an i
 
 ## 📋 To-Do List
 
-1- Fixing forced log clear on switching to roster bug
-2- Adding Advantage and Disadvantage to attacks
-3- Adding saving throws to character sheet
-4- Relocating initiative rolls from battle page to character sheet and make it editable
-5- Add Grapple, Shove as default actions and Athletic and Acrobatic checks to sheet
-6- Add Multi choice Attack
-7- Add Conditions and their effects
-8- Add Attack types of attack roll, DC based and auto hit and multi parts for an attack
+1. Fixing forced log clear on switching to roster bug
+2. Adding Advantage and Disadvantage to attacks
+3. Adding saving throws to character sheet
+4. Relocating initiative rolls from battle page to character sheet and make it editable
+5. Add Grapple, Shove as default actions and Athletic and Acrobatic checks to sheet
+6. Add Multi choice Attack
+7. Add Conditions and their effects
+8. Add Attack types of attack roll, DC based and auto hit and multi parts for an attack
