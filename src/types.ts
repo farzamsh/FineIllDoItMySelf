@@ -39,6 +39,7 @@ export type AppState = {
   combatants: Combatant[];
   round: number;
   activeId: string | null;
+  log: LogEntry[];
 };
 
 /** UI prefs for the battle log */

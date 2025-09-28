@@ -16,6 +16,8 @@ type Props = {
   setRound: (n: number) => void;
   activeId: string | null;
   setActiveId: (id: string | null) => void;
+  log: LogEntry[];
+  setLog: (l: LogEntry[] | ((prev: LogEntry[]) => LogEntry[])) => void; // 👈 accept updater function too
 };
 
 // -------------------- UI helpers --------------------
@@ -61,6 +63,8 @@ export default function BattleView({
   setRound,
   activeId,
   setActiveId,
+  log,
+  setLog,
 }: Props) {
   const pool = useMemo(
     () => combatants.filter((c) => c.inEncounter),
@@ -91,7 +95,7 @@ export default function BattleView({
   const [bgInput, setBgInput] = useState<string>("");
 
   // Structured log + settings
-  const [log, setLog] = useState<LogEntry[]>([]);
+  // const [log, setLog] = useState<LogEntry[]>([]);
   const [settings, setSettings] = useState<LogSettings>(() => {
     try {
       return JSON.parse(

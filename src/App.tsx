@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import type { AppState, Combatant } from "./types";
+import { LogEntry, type AppState, type Combatant } from "./types";
 import { loadState, saveState } from "./lib/storage";
 import Layout from "./Layout";
 
@@ -7,6 +7,7 @@ const INITIAL: AppState = {
   combatants: [],
   round: 1,
   activeId: null,
+  log: [],
 };
 
 export default function App() {
@@ -17,11 +18,14 @@ export default function App() {
   const [activeId, setActiveId] = useState<string | null>(
     loadState(INITIAL).activeId
   );
+  const [log, setLog] = useState<LogEntry[]>(
+    loadState(INITIAL).log ?? []
+  );
 
   // Keep localStorage fresh on any change
   useEffect(() => {
-    saveState({ combatants, round, activeId });
-  }, [combatants, round, activeId]);
+    saveState({ combatants, round, activeId, log });
+  }, [combatants, round, activeId, log]);
 
   // Seed with a sample encounter (optional)
   const hasNoData = useMemo(() => combatants.length === 0, [combatants.length]);
@@ -56,7 +60,7 @@ export default function App() {
         },
       ];
       setCombatants(sample);
-      saveState({ combatants: sample, round: 1, activeId: null });
+      saveState({ combatants: sample, round: 1, activeId: null, log: [] });
     }
   }, [hasNoData]);
 
@@ -68,6 +72,8 @@ export default function App() {
       setRound={setRound}
       activeId={activeId}
       setActiveId={setActiveId}
+      log={log}
+      setLog={setLog}
     />
   );
 }

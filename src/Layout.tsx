@@ -9,7 +9,7 @@ import EncounterCards from "./components/EncounterCards";
 import InitiativeCards from "./components/InitiativeCards";
 
 import DiceRoller from "./components/DiceRoller";
-import type { Combatant } from "./types";
+import type { Combatant, LogEntry } from "./types";
 
 type Props = {
   combatants: Combatant[];
@@ -18,6 +18,8 @@ type Props = {
   setRound: (n: number) => void;
   activeId: string | null;
   setActiveId: (id: string | null) => void;
+  log: LogEntry[];
+  setLog: (l: LogEntry[] | ((prev: LogEntry[]) => LogEntry[])) => void; // 👈 accept updater function too
 };
 
 const TabButton: React.FC<{
@@ -42,6 +44,8 @@ function Layout({
   setRound,
   activeId,
   setActiveId,
+  log,
+  setLog,
 }: Props) {
   // Default to the new flow
   const [tab, setTab] = useState<
@@ -104,6 +108,8 @@ function Layout({
             setRound={setRound}
             activeId={activeId}
             setActiveId={setActiveId}
+            log={log}
+            setLog={setLog}
           />
         )}
 
