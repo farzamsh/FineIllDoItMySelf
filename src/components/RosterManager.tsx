@@ -80,7 +80,7 @@ export default function RosterManager({ combatants, setCombatants }: Props) {
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
           />
-          <button className="btn" onClick={add}>
+          <button className="btn-green" onClick={add}>
             + Add
           </button>
         </div>
@@ -270,7 +270,7 @@ export default function RosterManager({ combatants, setCombatants }: Props) {
                         }
                       />
                       <button
-                        className="btn"
+                        className="btn-red"
                         onClick={() =>
                           update({ ...c, attacks: c.attacks.filter((x) => x.id !== a.id) })
                         }
@@ -280,7 +280,7 @@ export default function RosterManager({ combatants, setCombatants }: Props) {
                     </div>
                   ))}
                   <button
-                    className="btn w-fit"
+                    className="btn-green w-fit"
                     onClick={() =>
                       update({
                         ...c,
@@ -304,7 +304,7 @@ export default function RosterManager({ combatants, setCombatants }: Props) {
                     <span className="badge bg-slate-700">Healthy</span>
                   )}
                 </div>
-                <button className="btn" onClick={() => remove(c.id)}>
+                <button className="btn-red" onClick={() => remove(c.id)}>
                   Remove
                 </button>
               </div>

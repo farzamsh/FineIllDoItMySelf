@@ -111,12 +111,36 @@ If you have ideas for new features or better UI for logs, feel free to open an i
 
 ## 📋 To-Do List
 
+Stage 1: Making the app playable with manual modifications for not supported features
+
 1. ✅ Fixing forced log clear on switching to roster bug
-2. Adding Advantage and Disadvantage to attacks
-3. Adding saving throws to character sheet
-4. Relocating initiative rolls from battle page to character sheet and make it editable
-5. Add Grapple, Shove as default actions and Athletic and Acrobatic checks to sheet
-6. Add Multi choice Attack
-7. Add Conditions and their effects
-8. Add Attack types of attack roll, DC based and auto hit and multi parts for an attack
-9. two step attacks in battle page, first show the dice and access to add or change or reroll
+2. ✅ Adding Advantage and Disadvantage to attacks
+3. two step attacks in battle page, first show the dice and access to add or change or reroll
+4. Adding saving throws to character sheet
+5. Adding Attack types of attack roll, DC based and auto hit
+6. Adding Multi choice Attack
+
+Stage 2: Providing easier gameplay with adding all dice rolls and checks
+
+1. Relocating initiative rolls from battle page to character sheet and make it editable
+2. Adding Grapple, Shove as default actions and Athletic and Acrobatic checks to sheet
+3. Adding ability checks, proficiencies and advantages in them
+
+Stage 3: Improving overall layout and add a bit automation
+
+1. Designig different formats of attack and spell types
+2. Adding default weapons and spells
+3. Adding customable weapons and spells with ability to combine and corrolate(ones success adding another, different outcomes on fails)
+4. Building a whole turn section for each player turn with attacks, spells, slots and bonus actions
+
+Stage 4: Full character sheet and features and Maximum automation!
+
+1. Adding character full features and abilities
+2. Adding Conditions and their effects
+3. Adding feats and class and subclass features
+4. Adding items and their features, atunements and item charges
+
+Stage 5: Multi account access, defining roles and access
+...
+
+Stage 6: Too many ideas to cover here! let's finish these first then we will get to them 😊

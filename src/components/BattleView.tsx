@@ -49,11 +49,14 @@ function uid() {
 }
 
 // Detailed d20 so we can detect nat 20 / nat 1
-function rollD20Detailed(mod: number) {
-  const raw = Math.floor(Math.random() * 20) + 1; // 1..20
-  const total = raw + mod;
-  return { raw, total, isCrit: raw === 20, isFumble: raw === 1 };
-}
+// function rollD20Detailed(mod: number) {
+//   const raw = Math.floor(Math.random() * 20) + 1; // 1..20
+//   const total = raw + mod;
+//   return { raw, total, isCrit: raw === 20, isFumble: raw === 1 };
+// }
+// function rollD20Detailed(mod: number) {
+//   return d20(mod);
+// }
 
 // -------------------- Component --------------------
 export default function BattleView({
@@ -82,6 +85,8 @@ export default function BattleView({
   const [attackChoice, setAttackChoice] = useState<string>("");
   const [attackerId, setAttackerId] = useState<string | null>(null);
   const [targetId, setTargetId] = useState<string | null>(null);
+  const [advantageMode, setAdvantageMode] = useState<"normal" | "advantage" | "disadvantage">("normal");
+
 
   // remember last attack and last target per attacker
   const [lastAttackByAttacker, setLastAttackByAttacker] = useState<
@@ -184,6 +189,7 @@ export default function BattleView({
         targetTeam: 1 as TeamId,
         toHitMod: 0,
         raw: 0,
+        parts: [],
         total: 0,
         passed: true,
         isCrit: false,
@@ -221,7 +227,8 @@ export default function BattleView({
     setLastTargetByAttacker((m) => ({ ...m, [atk.id]: tgt.id }));
 
     // roll to hit (detailed)
-    const hit = rollD20Detailed(attack.toHitMod);
+    const mode = advantageMode;
+    const hit = d20(attack.toHitMod, mode);
     const passed = hit.total >= tgt.ac;
 
     let damage: number | undefined = undefined;
@@ -246,10 +253,11 @@ export default function BattleView({
       targetTeam: (tgt.team ?? 1) as TeamId,
       toHitMod: attack.toHitMod,
       raw: hit.raw,
+      parts: hit.parts,
       total: hit.total,
       passed,
-      isCrit: hit.isCrit,
-      isFumble: hit.isFumble,
+      isCrit: hit.raw === 20,
+      isFumble: hit.raw === 1,
       damage,
       died,
     };
@@ -268,13 +276,13 @@ export default function BattleView({
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">🏁 Battle</h2>
         <div className="flex items-center gap-2">
-          <button className="btn" onClick={rollAllInitiative}>
+          <button className="btn-normal" onClick={rollAllInitiative}>
             Roll initiative for all
           </button>
           <div className="badge">
             Round <strong className="ml-1">{round}</strong>
           </div>
-          <button className="btn" onClick={nextTurn}>
+          <button className="btn-normal" onClick={nextTurn}>
             Next ▶
           </button>
         </div>
@@ -287,7 +295,7 @@ export default function BattleView({
             value={bgInput}
             onChange={(e) => setBgInput(e.target.value)}
           />
-          <button className="btn" onClick={applyBackground}>
+          <button className="btn-normal" onClick={applyBackground}>
             Apply BG
           </button>
         </div>
@@ -366,21 +374,42 @@ export default function BattleView({
           </div>
 
           <div>
-            <label className="label">Attack</label>
-            <select
-              className="select w-full"
-              value={attackChoice}
-              onChange={(e) => setAttackChoice(e.target.value)}
-            >
-              {(
-                pool.find((c) => c.id === (attackerId ?? activeId))?.attacks ??
-                []
-              ).map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name} (toHit +{a.toHitMod}, dmg {a.damage})
-                </option>
-              ))}
-            </select>
+            <div>
+              <label className="label">Attack</label>
+              <select
+                className="select w-full"
+                value={attackChoice}
+                onChange={(e) => setAttackChoice(e.target.value)}
+              >
+                {(
+                  pool.find((c) => c.id === (attackerId ?? activeId))?.attacks ??
+                  []
+                ).map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name} (toHit +{a.toHitMod}, dmg {a.damage})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex gap-2">
+              <button
+                className={advantageMode === "advantage" ? "btn-green" : "btn-normal"}
+                onClick={() =>
+                  setAdvantageMode((prev) => (prev === "advantage" ? "normal" : "advantage"))
+                }
+              >
+                Advantage
+              </button>
+              <button
+                className={advantageMode === "disadvantage" ? "btn-red" : "btn-normal"}
+                onClick={() =>
+                  setAdvantageMode((prev) => (prev === "disadvantage" ? "normal" : "disadvantage"))
+                }
+              >
+                Disadvantage
+              </button>
+            </div>
+
           </div>
 
           <div>
@@ -406,7 +435,7 @@ export default function BattleView({
           >
             Roll Attack
           </button>
-          <button className="btn" onClick={() => setLog([])}>
+          <button className="btn-normal" onClick={() => setLog([])}>
             Clear log
           </button>
         </div>
@@ -485,11 +514,12 @@ export default function BattleView({
                             {e.passed ? "HIT" : "MISS"} {e.total}
                             <span className="opacity-70">
                               {" "}
-                              (d20 {e.raw}
+                              {/* (d20 {e.raw}
                               {e.toHitMod >= 0
                                 ? `+${e.toHitMod}`
                                 : `${e.toHitMod}`}
-                              )
+                              ) */}
+                              {e.parts} 
                             </span>
                           </span>
 

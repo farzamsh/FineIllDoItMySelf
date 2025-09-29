@@ -12,8 +12,11 @@ color-scheme: dark;
     /* @apply bg-slate-900/70 border border-slate-800 rounded-2xl p-4 shadow; */
     @apply border-slate-800 rounded-2xl p-4 shadow;
 }
-.btn {
+/* .btn {
 @apply inline-flex items-center justify-center rounded-xl px-3 py-2 border border-slate-700 bg-slate-800 hover:bg-slate-700 active:scale-95;
+} */
+.btn {
+@apply inline-flex items-center justify-center rounded-xl px-3 py-2 border border-slate-700 active:scale-95;
 }
 .input {
 @apply bg-slate-900/60 border border-slate-700 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500;
@@ -29,4 +32,13 @@ color-scheme: dark;
 }
 .link {
 @apply underline decoration-dotted underline-offset-4 hover:text-indigo-300;
+}
+.btn-normal {
+@apply btn bg-slate-800 text-white hover:bg-slate-700;
+}
+.btn-green {
+@apply btn bg-green-600 text-white hover:bg-green-700;
+}
+.btn-red {
+@apply btn bg-red-600 text-white hover:bg-red-700;
 }
