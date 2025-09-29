@@ -87,6 +87,163 @@ export default function BattleView({
   const [targetId, setTargetId] = useState<string | null>(null);
   const [advantageMode, setAdvantageMode] = useState<"normal" | "advantage" | "disadvantage">("normal");
 
+// ---------- Attack 3-step UI state ----------
+const [attackStage, setAttackStage] = useState<1 | 2 | 3>(1);
+
+// Inputs
+const [attackBonusInput, setAttackBonusInput] = useState<string>(""); // stage1 input (pre-roll)
+const [attackExtraInput, setAttackExtraInput] = useState<string>(""); // stage2 extra bonus (applied on Apply)
+const [damageBonusInput, setDamageBonusInput] = useState<string>(""); // stage3 damage bonus input
+
+// Stored roll results
+const [attackRoll, setAttackRoll] = useState<any | null>(null); // original d20 roll object from d20()
+const [attackPreBonusUsed, setAttackPreBonusUsed] = useState<number>(0); // the pre-bonus used when rolling (so reroll uses same)
+const [attackFinalTotal, setAttackFinalTotal] = useState<number | null>(null); // total after extra apply
+const [attackPassed, setAttackPassed] = useState<boolean | null>(null); // whether it hit (computed on Apply)
+const [damageRoll, setDamageRoll] = useState<any | null>(null); // damage roll result (if any)
+
+// ------- Functions for the flow -------
+function handleAttackRoll() {
+  const currentAttackerId = attackerId ?? activeId;
+  const atkOwner = pool.find((c) => c.id === currentAttackerId);
+  const tgt = pool.find((c) => c.id === targetId);
+  if (!atkOwner || !tgt) return;
+
+  const attack = atkOwner.attacks.find((a) => a.id === attackChoice) ?? atkOwner.attacks[0];
+  if (!attack) return;
+
+  const preBonus = parseInt(attackBonusInput || "0", 10) || 0;
+  const roll = d20(attack.toHitMod + preBonus, advantageMode); // uses existing d20(mod, mode)
+  // store
+  setAttackRoll(roll);
+  setAttackPreBonusUsed(preBonus);
+  setAttackFinalTotal(roll.total); // base total (before stage2 extra)
+  setAttackPassed(null); // not decided yet
+  setAttackExtraInput(""); // clear extra input as requested
+  setAttackBonusInput(""); // clear pre-roll input as requested
+  setDamageRoll(null);
+  setDamageBonusInput("");
+  setAttackStage(2);
+}
+
+function handleAttackReroll() {
+  // reroll using same attacker/attack and the stored pre-bonus
+  const currentAttackerId = attackerId ?? activeId;
+  const atkOwner = pool.find((c) => c.id === currentAttackerId);
+  if (!atkOwner) return;
+  const attack = atkOwner.attacks.find((a) => a.id === attackChoice) ?? atkOwner.attacks[0];
+  if (!attack) return;
+  const roll = d20(attack.toHitMod + attackPreBonusUsed, advantageMode);
+  setAttackRoll(roll);
+  setAttackFinalTotal(roll.total);
+  setAttackPassed(null);
+  setDamageRoll(null);
+  setDamageBonusInput("");
+}
+
+function handleAttackApply() {
+  // apply any stage-2 extra bonus to the existing roll, decide hit/miss, and move to stage 3
+  const currentAttackerId = attackerId ?? activeId;
+  const atkOwner = pool.find((c) => c.id === currentAttackerId);
+  const tgt = pool.find((c) => c.id === targetId);
+  if (!atkOwner || !tgt || !attackRoll) return;
+  const attack = atkOwner.attacks.find((a) => a.id === attackChoice) ?? atkOwner.attacks[0];
+  if (!attack) return;
+
+  const extra = parseInt(attackExtraInput || "0", 10) || 0;
+  const finalTotal = (attackRoll.total ?? 0) + extra;
+  setAttackFinalTotal(finalTotal);
+  const passed = finalTotal >= tgt.ac;
+  setAttackPassed(passed);
+  setAttackExtraInput(""); // clear extra input (as you requested)
+  // if hit, auto-roll damage here
+  // if (passed) {
+  //   const dmg = rollDice(attack.damage);
+  //   setDamageRoll(dmg);
+  // } else {
+  //   setDamageRoll(null);
+  // }
+  const dmg = rollDice(attack.damage);
+  setDamageRoll(dmg);
+  setDamageBonusInput("");
+  setAttackStage(3);
+}
+
+function handleBackToAttack() {
+  // go back to stage 2 (keep attackRoll so user can re-apply or reroll)
+  setAttackStage(2);
+}
+
+function handleDamageApplyAndLog() {
+  const currentAttackerId = attackerId ?? activeId;
+  const atkOwner = pool.find((c) => c.id === currentAttackerId);
+  const tgt = pool.find((c) => c.id === targetId);
+  if (!atkOwner || !tgt || !attackRoll) return;
+  const attack = atkOwner.attacks.find((a) => a.id === attackChoice) ?? atkOwner.attacks[0];
+  if (!attack) return;
+
+  // compute final attack total (may already be set)
+  const extra = 0; // when logging, attackFinalTotal should already be set by handleAttackApply
+  const finalTotal = attackFinalTotal ?? attackRoll.total;
+
+  // compute damage if a hit
+  let finalDamage: number = 0;
+  let died = false;
+  // if (attackPassed) {
+  //   const dmgBase = damageRoll?.total ?? 0;
+  //   const dmgBonus = parseInt(damageBonusInput || "0", 10) || 0;
+  //   finalDamage = dmgBase + dmgBonus;
+  //   const hpAfter = applyDamage(tgt, finalDamage);
+  //   died = hpAfter === 0;
+
+  const dmgBase = attackPassed ? (damageRoll?.total ?? 0) : 0;
+  const dmgBonus = parseInt(damageBonusInput || "0", 10) || 0;
+  finalDamage = dmgBase + dmgBonus;
+  const hpAfter = applyDamage(tgt, finalDamage);
+  died = hpAfter === 0;
+
+  // Build parts string: show original parts and appended extras so it's visible in log
+  const partsStr = `${attackRoll.parts ?? ""}${
+    attackPreBonusUsed ? ` +${attackPreBonusUsed}` : ""
+  }`;
+
+  // Log entry (keep shape similar to existing entries)
+  const entry: LogEntry = {
+    id: uid(),
+    ts: Date.now(),
+    attackerId: atkOwner.id,
+    attackerName: atkOwner.name,
+    attackerTeam: (atkOwner.team ?? 1) as TeamId,
+    targetId: tgt.id,
+    targetName: tgt.name,
+    targetTeam: (tgt.team ?? 1) as TeamId,
+    toHitMod: attack.toHitMod,
+    raw: attackRoll.raw,
+    parts: [partsStr],
+    total: finalTotal ?? 0,
+    passed: !!attackPassed,
+    isCrit: attackRoll.raw === 20,
+    isFumble: attackRoll.raw === 1,
+    damage: finalDamage,
+    died,
+  };
+  pushEntry(entry);
+
+  // persist overall app state (combatants may have changed via applyDamage)
+  saveState({ combatants, round, activeId });
+
+  // reset card
+  setAttackStage(1);
+  setAttackRoll(null);
+  setAttackFinalTotal(null);
+  setAttackPassed(null);
+  setDamageRoll(null);
+  setAttackPreBonusUsed(0);
+  setAttackBonusInput("");
+  setAttackExtraInput("");
+  setDamageBonusInput("");
+}
+
 
   // remember last attack and last target per attacker
   const [lastAttackByAttacker, setLastAttackByAttacker] = useState<
@@ -357,6 +514,7 @@ export default function BattleView({
       <div className="card space-y-3">
         <h3 className="font-semibold">⚔️ Attack</h3>
 
+        {/* --- keep top Attacker / Attack / Target controls (unchanged) --- */}
         <div className="grid md:grid-cols-3 gap-3">
           <div>
             <label className="label">Attacker</label>
@@ -374,24 +532,22 @@ export default function BattleView({
           </div>
 
           <div>
-            <div>
-              <label className="label">Attack</label>
-              <select
-                className="select w-full"
-                value={attackChoice}
-                onChange={(e) => setAttackChoice(e.target.value)}
-              >
-                {(
-                  pool.find((c) => c.id === (attackerId ?? activeId))?.attacks ??
-                  []
-                ).map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.name} (toHit +{a.toHitMod}, dmg {a.damage})
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex gap-2">
+            <label className="label">Attack</label>
+            <select
+              className="select w-full"
+              value={attackChoice}
+              onChange={(e) => setAttackChoice(e.target.value)}
+            >
+              {(
+                pool.find((c) => c.id === (attackerId ?? activeId))?.attacks ?? []
+              ).map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name} (toHit +{a.toHitMod}, dmg {a.damage})
+                </option>
+              ))}
+            </select>
+
+            <div className="mt-2 flex items-center gap-2">
               <button
                 className={advantageMode === "advantage" ? "btn-green" : "btn-normal"}
                 onClick={() =>
@@ -409,7 +565,6 @@ export default function BattleView({
                 Disadvantage
               </button>
             </div>
-
           </div>
 
           <div>
@@ -427,6 +582,171 @@ export default function BattleView({
             </select>
           </div>
         </div>
+
+        {/* --- New polished Attack card (3-step) --- */}
+        <div className="card space-y-4 mt-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold">⚔️ Attack</h3>
+            <div className="text-sm text-slate-400">Step {attackStage} of 3</div>
+          </div>
+
+          {/* Stage 1 - input pre-roll attack bonus and roll */}
+          {attackStage === 1 && (
+            <div className="grid md:grid-cols-3 gap-3 items-end">
+              <div>
+                <label className="label">Attack Bonus (pre-roll)</label>
+                <input
+                  type="number"
+                  className="input w-full"
+                  value={attackBonusInput}
+                  onChange={(e) => setAttackBonusInput(e.target.value)}
+                  placeholder="+0"
+                />
+              </div>
+
+              <div>
+                <label className="label">Attack to use</label>
+                <div className="text-sm text-slate-300">
+                  {(pool.find((c) => c.id === (attackerId ?? activeId))?.attacks ?? [])[0]?.name ?? ""}
+                </div>
+              </div>
+
+              <div>
+                <button
+                  className="btn bg-indigo-600 text-white w-full"
+                  onClick={handleAttackRoll}
+                >
+                  🎲 Roll Attack
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Stage 2 - show roll, allow extra bonus, reroll or apply */}
+          {attackStage === 2 && attackRoll && (
+            <div className="space-y-3">
+              <div className="p-3 rounded-xl bg-slate-900/50 border border-slate-700">
+                <div className="flex items-center gap-3">
+                  <div>
+                    <div className="text-xs text-slate-400">d20 roll</div>
+                    <div className="text-lg font-semibold">{attackRoll.raw}</div>
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-xs text-slate-400">Base total</div>
+                    <div className="text-lg font-semibold">{attackRoll.total}</div>
+                    <div className="text-sm text-slate-400 mt-1">
+                      {attackRoll.parts ?? ""}
+                      {attackPreBonusUsed ? ` · pre bonus ${attackPreBonusUsed >= 0 ? "+" : ""}${attackPreBonusUsed}` : ""}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xs text-slate-400">AC</div>
+                    <div className="text-lg font-semibold">
+                      {pool.find((c) => c.id === targetId)?.ac ?? "-"}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-3">
+                  <div className="inline-flex items-center gap-2">
+                    {attackRoll.raw === 20 && <span className="text-green-400">💥 NAT 20</span>}
+                    {attackRoll.raw === 1 && <span className="text-red-400">❌ NAT 1</span>}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-3 gap-3 items-end">
+                <div>
+                  <label className="label">Extra bonus (apply when you press Apply)</label>
+                  <input
+                    type="number"
+                    className="input w-full"
+                    value={attackExtraInput}
+                    onChange={(e) => setAttackExtraInput(e.target.value)}
+                    placeholder="+0"
+                  />
+                </div>
+
+                <div className="md:col-span-2 flex gap-2">
+                  <button className="btn-normal flex-1" onClick={handleAttackReroll}>
+                    🔄 Re-roll
+                  </button>
+                  <button className="btn bg-indigo-600 text-white flex-1" onClick={handleAttackApply}>
+                    ✅ Apply
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Stage 3 - show final attack, whether it hit, and damage options */}
+          {attackStage === 3 && (
+            <div className="space-y-3">
+              {/* Attack summary */}
+              <div className="p-3 rounded-xl bg-slate-900/50 border border-slate-700">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-xs text-slate-400">Attack Roll</div>
+                    <div className="text-lg font-semibold">
+                      {attackFinalTotal ?? attackRoll?.total ?? "-"}
+                    </div>
+                    <div className="text-sm text-slate-400 mt-1">
+                      (d20 {attackRoll?.raw} {attackRoll?.parts ?? ""})
+                    </div>
+                  </div>
+
+                  <div className="text-right">
+                    {attackPassed ? (
+                      <div className="text-green-400 font-semibold">✅ Hit</div>
+                    ) : (
+                      <div className="text-red-400 font-semibold">❌ Miss</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Damage block (only shown if it hit) */}
+              {/* {attackPassed ? (
+                <> */}
+                  <div className="p-3 rounded-xl bg-slate-900/50 border border-slate-700">
+                    <div className="text-sm text-slate-400">Damage roll</div>
+                    <div className="text-lg font-semibold">{damageRoll?.total ?? "-"}</div>
+                    <div className="text-sm text-slate-400 mt-1">{damageRoll?.parts ?? ""}</div>
+                  </div>
+
+                  <div className="grid md:grid-cols-3 gap-3 items-end">
+                    <div>
+                      <label className="label">Damage Bonus</label>
+                      <input
+                        type="number"
+                        className="input w-full"
+                        value={damageBonusInput}
+                        onChange={(e) => setDamageBonusInput(e.target.value)}
+                        placeholder="+0"
+                      />
+                    </div>
+
+                    <div className="md:col-span-2 flex gap-2">
+                      <button className="btn-normal flex-1" onClick={handleBackToAttack}>
+                        ⬅ Back
+                      </button>
+                      <button className="btn bg-indigo-600 text-white flex-1" onClick={handleDamageApplyAndLog}>
+                        Apply & Log
+                      </button>
+                    </div>
+                  </div>
+                {/* </>
+              ) : (
+                // Miss: no damage input, still allow back or log the miss
+                <div className="flex gap-2">
+                  <button className="btn-normal flex-1" onClick={handleBackToAttack}>⬅ Back</button>
+                  <button className="btn bg-indigo-600 text-white flex-1" onClick={handleDamageApplyAndLog}>Log Miss</button>
+                </div>
+              )} */}
+            </div>
+          )}
+        </div>
+
 
         <div className="flex gap-2">
           <button

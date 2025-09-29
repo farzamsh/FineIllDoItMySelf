@@ -115,7 +115,12 @@ Stage 1: Making the app playable with manual modifications for not supported fea
 
 1. ✅ Fixing forced log clear on switching to roster bug
 2. ✅ Adding Advantage and Disadvantage to attacks
-3. two step attacks in battle page, first show the dice and access to add or change or reroll
+   - ✅ In attack card
+   - ✅ In logs
+3. Two step attacks in battle page, first show the dice and access to add or change or reroll
+   - ✅ Building new attack card and the two steps
+   - Cleaning the code and deleting the old format
+   - UI improvment of the attack card
 4. Adding saving throws to character sheet
 5. Adding Attack types of attack roll, DC based and auto hit
 6. Adding Multi choice Attack
@@ -125,6 +130,7 @@ Stage 2: Providing easier gameplay with adding all dice rolls and checks
 1. Relocating initiative rolls from battle page to character sheet and make it editable
 2. Adding Grapple, Shove as default actions and Athletic and Acrobatic checks to sheet
 3. Adding ability checks, proficiencies and advantages in them
+4. Hidden mode to hide enemies' HP and AC for Projection mode
 
 Stage 3: Improving overall layout and add a bit automation
 
