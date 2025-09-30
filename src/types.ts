@@ -63,7 +63,7 @@ export type LogEntry = {
 
   toHitMod: number;
   raw: number;         // natural d20
-  parts: string[];       // details of roll
+  parts: string;       // details of roll
   total: number;       // raw + mod
   passed: boolean;     // hit or miss
   isCrit: boolean;     // nat 20

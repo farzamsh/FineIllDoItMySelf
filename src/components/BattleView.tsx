@@ -48,16 +48,6 @@ function uid() {
   return Math.random().toString(36).slice(2, 10);
 }
 
-// Detailed d20 so we can detect nat 20 / nat 1
-// function rollD20Detailed(mod: number) {
-//   const raw = Math.floor(Math.random() * 20) + 1; // 1..20
-//   const total = raw + mod;
-//   return { raw, total, isCrit: raw === 20, isFumble: raw === 1 };
-// }
-// function rollD20Detailed(mod: number) {
-//   return d20(mod);
-// }
-
 // -------------------- Component --------------------
 export default function BattleView({
   combatants,
@@ -87,167 +77,144 @@ export default function BattleView({
   const [targetId, setTargetId] = useState<string | null>(null);
   const [advantageMode, setAdvantageMode] = useState<"normal" | "advantage" | "disadvantage">("normal");
 
-// ---------- Attack 3-step UI state ----------
-const [attackStage, setAttackStage] = useState<1 | 2 | 3>(1);
+  // ---------- Attack 3-step UI state ----------
+  const [attackStage, setAttackStage] = useState<1 | 2 | 3>(1);
 
-// Inputs
-const [attackBonusInput, setAttackBonusInput] = useState<string>(""); // stage1 input (pre-roll)
-const [attackExtraInput, setAttackExtraInput] = useState<string>(""); // stage2 extra bonus (applied on Apply)
-const [damageBonusInput, setDamageBonusInput] = useState<string>(""); // stage3 damage bonus input
+  // Inputs
+  const [attackBonusInput, setAttackBonusInput] = useState<string>(""); // stage1 attack bonus input
+  const [damageBonusInput, setDamageBonusInput] = useState<string>(""); // stage3 damage bonus input
 
-// Stored roll results
-const [attackRoll, setAttackRoll] = useState<any | null>(null); // original d20 roll object from d20()
-const [attackPreBonusUsed, setAttackPreBonusUsed] = useState<number>(0); // the pre-bonus used when rolling (so reroll uses same)
-const [attackFinalTotal, setAttackFinalTotal] = useState<number | null>(null); // total after extra apply
-const [attackPassed, setAttackPassed] = useState<boolean | null>(null); // whether it hit (computed on Apply)
-const [damageRoll, setDamageRoll] = useState<any | null>(null); // damage roll result (if any)
+  // Stored roll results
+  const [attackRoll, setAttackRoll] = useState<any | null>(null); // original d20 roll object from d20()
+  const [attackPassed, setAttackPassed] = useState<boolean | null>(null); // whether it hit (computed on Apply)
+  const [damageRoll, setDamageRoll] = useState<any | null>(null); // damage roll result (if any)
 
-// ------- Functions for the flow -------
-function handleAttackRoll() {
-  const currentAttackerId = attackerId ?? activeId;
-  const atkOwner = pool.find((c) => c.id === currentAttackerId);
-  const tgt = pool.find((c) => c.id === targetId);
-  if (!atkOwner || !tgt) return;
+  // ------- Functions for the flow -------
+  function handleAttackRoll() {
+    const currentAttackerId = attackerId ?? activeId;
+    const atkOwner = pool.find((c) => c.id === currentAttackerId);
+    const tgt = pool.find((c) => c.id === targetId);
+    if (!atkOwner || !tgt) return;
 
-  const attack = atkOwner.attacks.find((a) => a.id === attackChoice) ?? atkOwner.attacks[0];
-  if (!attack) return;
+    const attack = atkOwner.attacks.find((a) => a.id === attackChoice) ?? atkOwner.attacks[0];
+    if (!attack) return;
 
-  const preBonus = parseInt(attackBonusInput || "0", 10) || 0;
-  const roll = d20(attack.toHitMod + preBonus, advantageMode); // uses existing d20(mod, mode)
-  // store
-  setAttackRoll(roll);
-  setAttackPreBonusUsed(preBonus);
-  setAttackFinalTotal(roll.total); // base total (before stage2 extra)
-  setAttackPassed(null); // not decided yet
-  setAttackExtraInput(""); // clear extra input as requested
-  setAttackBonusInput(""); // clear pre-roll input as requested
-  setDamageRoll(null);
-  setDamageBonusInput("");
-  setAttackStage(2);
-}
+    const roll = d20(attack.toHitMod, advantageMode); // uses existing d20(mod, mode)
+    // store
+    setAttackRoll(roll);
+    setAttackStage(2);
+  }
 
-function handleAttackReroll() {
-  // reroll using same attacker/attack and the stored pre-bonus
-  const currentAttackerId = attackerId ?? activeId;
-  const atkOwner = pool.find((c) => c.id === currentAttackerId);
-  if (!atkOwner) return;
-  const attack = atkOwner.attacks.find((a) => a.id === attackChoice) ?? atkOwner.attacks[0];
-  if (!attack) return;
-  const roll = d20(attack.toHitMod + attackPreBonusUsed, advantageMode);
-  setAttackRoll(roll);
-  setAttackFinalTotal(roll.total);
-  setAttackPassed(null);
-  setDamageRoll(null);
-  setDamageBonusInput("");
-}
+  function handleAttackReroll() {
+    // reroll using same attacker/attack and the stored pre-bonus
+    const currentAttackerId = attackerId ?? activeId;
+    const atkOwner = pool.find((c) => c.id === currentAttackerId);
+    if (!atkOwner) return;
+    const attack = atkOwner.attacks.find((a) => a.id === attackChoice) ?? atkOwner.attacks[0];
+    if (!attack) return;
+    const roll = d20(attack.toHitMod, advantageMode);
+    setAttackRoll(roll);
+    setAttackPassed(null);
+    setDamageRoll(null);
+    setDamageBonusInput("");
+  }
 
-function handleAttackApply() {
-  // apply any stage-2 extra bonus to the existing roll, decide hit/miss, and move to stage 3
-  const currentAttackerId = attackerId ?? activeId;
-  const atkOwner = pool.find((c) => c.id === currentAttackerId);
-  const tgt = pool.find((c) => c.id === targetId);
-  if (!atkOwner || !tgt || !attackRoll) return;
-  const attack = atkOwner.attacks.find((a) => a.id === attackChoice) ?? atkOwner.attacks[0];
-  if (!attack) return;
+  function handleAttackApply() {
+    // apply any stage-2 extra bonus to the existing roll, decide hit/miss, and move to stage 3
+    const currentAttackerId = attackerId ?? activeId;
+    const atkOwner = pool.find((c) => c.id === currentAttackerId);
+    const tgt = pool.find((c) => c.id === targetId);
+    if (!atkOwner || !tgt || !attackRoll) return;
+    const attack = atkOwner.attacks.find((a) => a.id === attackChoice) ?? atkOwner.attacks[0];
+    if (!attack) return;
 
-  const extra = parseInt(attackExtraInput || "0", 10) || 0;
-  const finalTotal = (attackRoll.total ?? 0) + extra;
-  setAttackFinalTotal(finalTotal);
-  const passed = finalTotal >= tgt.ac;
-  setAttackPassed(passed);
-  setAttackExtraInput(""); // clear extra input (as you requested)
-  // if hit, auto-roll damage here
-  // if (passed) {
-  //   const dmg = rollDice(attack.damage);
-  //   setDamageRoll(dmg);
-  // } else {
-  //   setDamageRoll(null);
-  // }
-  const dmg = rollDice(attack.damage);
-  setDamageRoll(dmg);
-  setDamageBonusInput("");
-  setAttackStage(3);
-}
+    const attackBonus = parseInt(attackBonusInput || "0", 10) || 0;
+    const finalTotal = (attackRoll.total ?? 0) + attackBonus;
+    const passed = finalTotal >= tgt.ac;
+    setAttackPassed(passed);
+    const dmg = rollDice(attack.damage);
+    setDamageRoll(dmg);
+    setAttackStage(3);
+  }
 
-function handleBackToAttack() {
-  // go back to stage 2 (keep attackRoll so user can re-apply or reroll)
-  setAttackStage(2);
-}
+  function handleDamageApplyAndLog() {
+    const currentAttackerId = attackerId ?? activeId;
+    const atkOwner = pool.find((c) => c.id === currentAttackerId);
+    const tgt = pool.find((c) => c.id === targetId);
+    if (!atkOwner || !tgt || !attackRoll) return;
+    const attack = atkOwner.attacks.find((a) => a.id === attackChoice) ?? atkOwner.attacks[0];
+    if (!attack) return;
 
-function handleDamageApplyAndLog() {
-  const currentAttackerId = attackerId ?? activeId;
-  const atkOwner = pool.find((c) => c.id === currentAttackerId);
-  const tgt = pool.find((c) => c.id === targetId);
-  if (!atkOwner || !tgt || !attackRoll) return;
-  const attack = atkOwner.attacks.find((a) => a.id === attackChoice) ?? atkOwner.attacks[0];
-  if (!attack) return;
+    // compute final attack total (may already be set)
+    const attackBonus = parseInt(attackBonusInput || "0", 10) || 0;
+    const finalTotal = attackRoll.total + attackBonus;
+    
+    // remember last selections for this attacker
+    setLastAttackByAttacker((m) => ({ ...m, [atkOwner.id]: attack.id }));
+    setLastTargetByAttacker((m) => ({ ...m, [atkOwner.id]: tgt.id }));
+    
+    // compute damage if a hit
+    let finalDamage: number = 0;
+    let died = false;
 
-  // compute final attack total (may already be set)
-  const extra = 0; // when logging, attackFinalTotal should already be set by handleAttackApply
-  const finalTotal = attackFinalTotal ?? attackRoll.total;
+    const dmgBase = attackPassed ? (damageRoll?.total ?? 0) : 0;
+    const dmgBonus = parseInt(damageBonusInput || "0", 10) || 0;
+    finalDamage = dmgBase + dmgBonus;
+    const hpAfter = applyDamage(tgt, finalDamage);
+    died = hpAfter === 0;
 
-  // compute damage if a hit
-  let finalDamage: number = 0;
-  let died = false;
-  // if (attackPassed) {
-  //   const dmgBase = damageRoll?.total ?? 0;
-  //   const dmgBonus = parseInt(damageBonusInput || "0", 10) || 0;
-  //   finalDamage = dmgBase + dmgBonus;
-  //   const hpAfter = applyDamage(tgt, finalDamage);
-  //   died = hpAfter === 0;
+    // Build parts string: show original parts and appended extras so it's visible in log
+    const partsStr = `${attackRoll.parts.join("") ?? ""}+${attackBonusInput}`;
 
-  const dmgBase = attackPassed ? (damageRoll?.total ?? 0) : 0;
-  const dmgBonus = parseInt(damageBonusInput || "0", 10) || 0;
-  finalDamage = dmgBase + dmgBonus;
-  const hpAfter = applyDamage(tgt, finalDamage);
-  died = hpAfter === 0;
+    // Log entry (keep shape similar to existing entries)
+    const entry: LogEntry = {
+      id: uid(),
+      ts: Date.now(),
+      attackerId: atkOwner.id,
+      attackerName: atkOwner.name,
+      attackerTeam: (atkOwner.team ?? 1) as TeamId,
+      targetId: tgt.id,
+      targetName: tgt.name,
+      targetTeam: (tgt.team ?? 1) as TeamId,
+      toHitMod: attack.toHitMod,
+      raw: attackRoll.raw,
+      parts: partsStr,
+      total: finalTotal ?? 0,
+      passed: !!attackPassed,
+      isCrit: attackRoll.raw === 20,
+      isFumble: attackRoll.raw === 1,
+      damage: finalDamage,
+      died,
+    };
+    pushEntry(entry);
 
-  // Build parts string: show original parts and appended extras so it's visible in log
-  const partsStr = `${attackRoll.parts ?? ""}${
-    attackPreBonusUsed ? ` +${attackPreBonusUsed}` : ""
-  }`;
+    // persist overall app state (combatants may have changed via applyDamage)
+    saveState({ combatants, round, activeId });
 
-  // Log entry (keep shape similar to existing entries)
-  const entry: LogEntry = {
-    id: uid(),
-    ts: Date.now(),
-    attackerId: atkOwner.id,
-    attackerName: atkOwner.name,
-    attackerTeam: (atkOwner.team ?? 1) as TeamId,
-    targetId: tgt.id,
-    targetName: tgt.name,
-    targetTeam: (tgt.team ?? 1) as TeamId,
-    toHitMod: attack.toHitMod,
-    raw: attackRoll.raw,
-    parts: [partsStr],
-    total: finalTotal ?? 0,
-    passed: !!attackPassed,
-    isCrit: attackRoll.raw === 20,
-    isFumble: attackRoll.raw === 1,
-    damage: finalDamage,
-    died,
-  };
-  pushEntry(entry);
-
-  // persist overall app state (combatants may have changed via applyDamage)
-  saveState({ combatants, round, activeId });
-
-  // reset card
-  setAttackStage(1);
-  setAttackRoll(null);
-  setAttackFinalTotal(null);
-  setAttackPassed(null);
-  setDamageRoll(null);
-  setAttackPreBonusUsed(0);
-  setAttackBonusInput("");
-  setAttackExtraInput("");
-  setDamageBonusInput("");
-}
-
-
+    // reset card
+    setAttackStage(1);
+    setAttackRoll(null);
+    setAttackPassed(null);
+    setDamageRoll(null);
+    setAttackBonusInput("");
+    setDamageBonusInput("");
+  }
+  
+  function applyDamage(target: Combatant, amount: number) {
+    const next = combatants.map((x) =>
+      x.id === target.id
+        ? { ...x, hp: Math.max(0, Math.min(x.maxHp, x.hp - amount)) }
+        : x
+    );
+    setCombatants(next);
+    saveState({ combatants: next, round, activeId });
+    const newTgt = next.find((n) => n.id === target.id)!;
+    return newTgt.hp;
+  }
+  
   // remember last attack and last target per attacker
   const [lastAttackByAttacker, setLastAttackByAttacker] = useState<
-    Record<string, string>
+  Record<string, string>
   >({});
   const [lastTargetByAttacker, setLastTargetByAttacker] = useState<
     Record<string, string>
@@ -257,7 +224,6 @@ function handleDamageApplyAndLog() {
   const [bgInput, setBgInput] = useState<string>("");
 
   // Structured log + settings
-  // const [log, setLog] = useState<LogEntry[]>([]);
   const [settings, setSettings] = useState<LogSettings>(() => {
     try {
       return JSON.parse(
@@ -346,7 +312,7 @@ function handleDamageApplyAndLog() {
         targetTeam: 1 as TeamId,
         toHitMod: 0,
         raw: 0,
-        parts: [],
+        parts: '',
         total: 0,
         passed: true,
         isCrit: false,
@@ -354,71 +320,6 @@ function handleDamageApplyAndLog() {
       };
       pushEntry(entry);
     }
-  }
-
-  function applyDamage(target: Combatant, amount: number) {
-    const next = combatants.map((x) =>
-      x.id === target.id
-        ? { ...x, hp: Math.max(0, Math.min(x.maxHp, x.hp - amount)) }
-        : x
-    );
-    setCombatants(next);
-    saveState({ combatants: next, round, activeId });
-    const newTgt = next.find((n) => n.id === target.id)!;
-    return newTgt.hp;
-  }
-
-  function doAttack() {
-    const currentAttackerId = attackerId ?? activeId;
-    const atk = pool.find((c) => c.id === currentAttackerId);
-    const tgt = pool.find((c) => c.id === targetId);
-    if (!atk || !tgt) return;
-
-    // pick attack (by id or default to first)
-    const attack: Attack | undefined =
-      atk.attacks.find((a) => a.id === attackChoice) ?? atk.attacks[0];
-    if (!attack) return;
-
-    // remember last selections for this attacker
-    setLastAttackByAttacker((m) => ({ ...m, [atk.id]: attack.id }));
-    setLastTargetByAttacker((m) => ({ ...m, [atk.id]: tgt.id }));
-
-    // roll to hit (detailed)
-    const mode = advantageMode;
-    const hit = d20(attack.toHitMod, mode);
-    const passed = hit.total >= tgt.ac;
-
-    let damage: number | undefined = undefined;
-    let died = false;
-
-    if (passed) {
-      const dmg = rollDice(attack.damage);
-      damage = dmg.total;
-      const hpAfter = applyDamage(tgt, dmg.total);
-      died = hpAfter === 0;
-    }
-
-    // log structured entry
-    const entry: LogEntry = {
-      id: uid(),
-      ts: Date.now(),
-      attackerId: atk.id,
-      attackerName: atk.name,
-      attackerTeam: (atk.team ?? 1) as TeamId,
-      targetId: tgt.id,
-      targetName: tgt.name,
-      targetTeam: (tgt.team ?? 1) as TeamId,
-      toHitMod: attack.toHitMod,
-      raw: hit.raw,
-      parts: hit.parts,
-      total: hit.total,
-      passed,
-      isCrit: hit.raw === 20,
-      isFumble: hit.raw === 1,
-      damage,
-      died,
-    };
-    pushEntry(entry);
   }
 
   // background color apply (accepts "rgb(...)" or "#hex")
@@ -582,17 +483,14 @@ function handleDamageApplyAndLog() {
                     className="input w-full"
                     placeholder="Extra bonus"
                     value={
-                      attackStage === 1
-                        ? attackBonusInput
-                        : attackStage === 2
-                        ? attackExtraInput
-                        : damageBonusInput
+                      attackStage === 3
+                        ? damageBonusInput
+                        : attackBonusInput
                     }
                     onChange={(e) => {
                       const v = e.target.value;
-                      if (attackStage === 1) setAttackBonusInput(v);
-                      else if (attackStage === 2) setAttackExtraInput(v);
-                      else setDamageBonusInput(v);
+                      if (attackStage === 3) setDamageBonusInput(v);
+                      else setAttackBonusInput(v);
                     }}
                   />
                 </div>
@@ -640,38 +538,22 @@ function handleDamageApplyAndLog() {
               <div className="flex items-center justify-around">
                 {/* left: base attack expression */}
                 <div className="text-sm text-slate-200">
-                  {/* show d20+<atkMod> */}
-                  {(() => {
-                    const a = pool.find((c) => c.id === (attackerId ?? activeId));
-                    const attack = a?.attacks.find((x) => x.id === attackChoice) ?? a?.attacks[0];
-                    const toHit = attack?.toHitMod ?? 0;
-                    return <span>d20{toHit >= 0 ? `+${toHit}` : `${toHit}`}</span>;
-                  })()}
-                </div>
-
-                {/* right: base damage expression */}
-                <div className="text-sm text-slate-200">
-                  {(() => {
-                    const a = pool.find((c) => c.id === (attackerId ?? activeId));
-                    const attack = a?.attacks.find((x) => x.id === attackChoice) ?? a?.attacks[0];
-                    return <span>{attack?.damage ?? "-"}</span>;
-                  })()}
-                </div>
-              </div>
-
-              {/* LINE 2: preview / result details (stage2 and stage3) */}
-              <div className="flex items-center justify-around">
-                {/* left: attack detail */}
-                <div className="text-sm">
                   {attackStage === 1 ? (
-                    <span className="text-slate-400 italic">Roll to preview details</span>
+                    (() => {
+                      const a = pool.find((c) => c.id === (attackerId ?? activeId));
+                      const attack = a?.attacks.find((x) => x.id === attackChoice) ?? a?.attacks[0];
+                      const toHit = attack?.toHitMod ?? 0;
+                      const Extra = parseInt(attackBonusInput || "0", 10) || 0;
+                      return <span>d20{toHit != 0 && (toHit > 0 ? `+${toHit}` : `${toHit}`)}
+                      {Extra != 0 && (Extra >= 0 ? `+${Extra}` : `${Extra}`)}</span>;
+                    })()
                   ) : (
                     // stage 2 or 3: show preview or final; include "Hit"/"Miss" prefix in stage 3
                     (() => {
-                      const previewExtra = parseInt(attackExtraInput || "0", 10) || 0;
+                      const Extra = parseInt(attackBonusInput || "0", 10) || 0;
                       const baseTotal = attackRoll?.total ?? 0;
-                      const previewTotal = (attackFinalTotal ?? ((baseTotal) + previewExtra));
-                      const parts = `${attackRoll?.parts ?? ""}${previewExtra ? (attackRoll?.parts ? `+${previewExtra}` : `+${previewExtra}`) : ""}`;
+                      const previewTotal = baseTotal + Extra;
+                      const parts = `${attackRoll?.parts.join("") ?? ""}${Extra ? `+${Extra}` : ""}`;
                       const prefix = attackStage === 3 ? (attackPassed ? "Hit " : "Miss ") : "";
                       return (
                         <span className={`${attackStage === 3 ? (attackPassed ? "text-green-400 font-semibold" : "text-red-400 font-semibold") : "text-slate-200"}`}>
@@ -682,24 +564,27 @@ function handleDamageApplyAndLog() {
                   )}
                 </div>
 
-                {/* right: damage detail (only shows in stage3 or stage2 preview is empty) */}
-                <div className="text-sm text-right">
-                  {attackStage === 1 ? (
-                    <span className="text-slate-400 italic">-</span>
-                  ) : attackStage === 2 ? (
-                    <span className="text-slate-400 italic">not rolled</span>
-                  ) : (
+                {/* right: base damage expression */}
+                <div className="text-sm text-slate-200">
+                  {attackStage === 3 ? (
                     // stage 3: show damage roll and possible damage bonus preview
                     (() => {
                       const db = parseInt(damageBonusInput || "0", 10) || 0;
                       const baseD = damageRoll?.total ?? 0;
-                      const parts = damageRoll?.parts ?? "";
+                      const parts = damageRoll?.parts.join("") ?? "";
                       const total = baseD + db;
                       return <span>{total ?? "-"} {parts ? `(${parts}${db ? `+${db}` : ""})` : (db ? `(+${db})` : "")}</span>;
+                    })()
+                  ) : (
+                    (() => {
+                      const a = pool.find((c) => c.id === (attackerId ?? activeId));
+                      const attack = a?.attacks.find((x) => x.id === attackChoice) ?? a?.attacks[0];
+                      return <span>{attack?.damage ?? "-"}</span>;
                     })()
                   )}
                 </div>
               </div>
+
             </div>
           </div>
 
@@ -775,20 +660,10 @@ function handleDamageApplyAndLog() {
           )}
         </div>
       </div>
-
-
-      {/* <div className="flex gap-2">
-        <button
-          className="btn bg-indigo-600 hover:bg-indigo-700 text-white"
-          onClick={doAttack}
-        >
-          Roll Attack
-        </button>
-        <button className="btn-normal" onClick={() => setLog([])}>
-          Clear log
-        </button>
-      </div> */}
-
+      {/* <button className="btn-normal" onClick={() => setLog([])}> */}
+      <button className="btn-normal" onClick={() => console.log(rollDice("-4d4+4+1d6+3d10-1"))}>
+            Clear log
+      </button>
       {/* Settings + Log */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">

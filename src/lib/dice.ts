@@ -1,36 +1,47 @@
 export type RollResult = { raw: number; total: number; parts: string[] }
 
 
-const diceRe = /(?:(\d*)d(\d+))|([+-]\s*\d+)/ig
-
-
 export function rollDice(notation: string): RollResult {
-// Supports forms like: "d20", "2d6+3", "4d4-1"
-let m: RegExpExecArray | null
-const parts: string[] = []
-let total = 0
-let raw = 0
-const clean = notation.replace(/\s+/g, '')
-while ((m = diceRe.exec(clean))) {
-if (m[1] !== undefined && m[2] !== undefined) {
-const count = m[1] ? parseInt(m[1], 10) : 1
-const sides = parseInt(m[2], 10)
-const rolls: number[] = []
-for (let i = 0; i < count; i++) {
-rolls.push(1 + Math.floor(Math.random() * sides))
-}
-const sum = rolls.reduce((a, b) => a + b, 0)
-raw = sum
-total += sum
-parts.push(`${count}d${sides}[${rolls.join(',')}]`)
-} else if (m[3] !== undefined) {
-const mod = parseInt(m[3].replace(/\s+/g, ''), 10)
-total += mod
-parts.push(`${mod >= 0 ? '+' : ''}${mod}`)
-}
-}
-return { raw, total, parts }
-}
+    const diceRe = /([+-]?)(\d*)d(\d+)|([+-]?\d+)(?!d)/gi;
+  
+    const parts: string[] = [];
+    let total = 0;
+    let raw = 0;
+  
+    const clean = (notation || "").replace(/\s+/g, "").toLowerCase();
+  
+    let m: RegExpExecArray | null;
+    while ((m = diceRe.exec(clean))) {
+      if (m[2] !== undefined && m[3] !== undefined) {
+        // Dice roll
+        const sign = m[1] === "-" ? -1 : 1;
+        const count = m[2] ? parseInt(m[2], 10) : 1;
+        const sides = parseInt(m[3], 10);
+  
+        const rolls: number[] = [];
+        for (let i = 0; i < count; i++) {
+          rolls.push(1 + Math.floor(Math.random() * sides));
+        }
+        const sum = rolls.reduce((a, b) => a + b, 0);
+  
+        raw += sign * sum;
+        total += sign * sum;
+  
+        // ✅ Always prefix "+" for positive dice too
+        const part = `${sign < 0 ? "-" : "+"}${count}d${sides}[${rolls.join(",")}]`;
+        parts.push(part);
+      } else if (m[4] !== undefined) {
+        // Modifier
+        const mod = parseInt(m[4], 10);
+        total += mod;
+        parts.push(`${mod >= 0 ? "+" : ""}${mod}`);
+      }
+    }
+  
+    return { total, raw, parts };
+  }
+  
+  
 
 
 export function d20(mod = 0, mode: "normal" | "advantage" | "disadvantage" = "normal"): RollResult {
