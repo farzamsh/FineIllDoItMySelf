@@ -511,373 +511,402 @@ function handleDamageApplyAndLog() {
       </div>
 
       {/* Attack controller */}
-      <div className="card space-y-3">
-        <h3 className="font-semibold">⚔️ Attack</h3>
+      {/* --- Action card (replaces old Attacker/Attack/Target + Attack card) --- */}
+      <div className="card space-y-4 mt-3">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="text-lg font-semibold">Action</div>
 
-        {/* --- keep top Attacker / Attack / Target controls (unchanged) --- */}
-        <div className="grid md:grid-cols-3 gap-3">
-          <div>
-            <label className="label">Attacker</label>
-            <select
-              className="select w-full"
-              value={attackerId ?? ""}
-              onChange={(e) => setAttackerId(e.target.value || null)}
+          <div className="flex items-center gap-3">
+            {/* small red back button that steps stage back (UI-only) */}
+            <button
+              type="button"
+              className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-600 hover:bg-red-700 text-white text-sm"
+              onClick={() => setAttackStage((s) => (Math.max(1, s - 1) as 1 | 2 | 3))}
+              aria-label="back stage"
             >
-              {pool.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name} (Team {c.team ?? 1})
-                </option>
-              ))}
-            </select>
-          </div>
+              &lt;
+            </button>
 
-          <div>
-            <label className="label">Attack</label>
-            <select
-              className="select w-full"
-              value={attackChoice}
-              onChange={(e) => setAttackChoice(e.target.value)}
-            >
-              {(
-                pool.find((c) => c.id === (attackerId ?? activeId))?.attacks ?? []
-              ).map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name} (toHit +{a.toHitMod}, dmg {a.damage})
-                </option>
-              ))}
-            </select>
-
-            <div className="mt-2 flex items-center gap-2">
-              <button
-                className={advantageMode === "advantage" ? "btn-green" : "btn-normal"}
-                onClick={() =>
-                  setAdvantageMode((prev) => (prev === "advantage" ? "normal" : "advantage"))
-                }
-              >
-                Advantage
-              </button>
-              <button
-                className={advantageMode === "disadvantage" ? "btn-red" : "btn-normal"}
-                onClick={() =>
-                  setAdvantageMode((prev) => (prev === "disadvantage" ? "normal" : "disadvantage"))
-                }
-              >
-                Disadvantage
-              </button>
-            </div>
-          </div>
-
-          <div>
-            <label className="label">Target</label>
-            <select
-              className="select w-full"
-              value={targetId ?? ""}
-              onChange={(e) => setTargetId(e.target.value || null)}
-            >
-              {pool.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name} (AC {c.ac}, Team {c.team ?? 1})
-                </option>
-              ))}
-            </select>
+            <div className="text-sm text-slate-400">Step {attackStage} of 3</div>
           </div>
         </div>
 
-        {/* --- New polished Attack card (3-step) --- */}
-        <div className="card space-y-4 mt-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">⚔️ Attack</h3>
-            <div className="text-sm text-slate-400">Step {attackStage} of 3</div>
-          </div>
-
-          {/* Stage 1 - input pre-roll attack bonus and roll */}
-          {attackStage === 1 && (
-            <div className="grid md:grid-cols-3 gap-3 items-end">
-              <div>
-                <label className="label">Attack Bonus (pre-roll)</label>
-                <input
-                  type="number"
-                  className="input w-full"
-                  value={attackBonusInput}
-                  onChange={(e) => setAttackBonusInput(e.target.value)}
-                  placeholder="+0"
-                />
-              </div>
-
-              <div>
-                <label className="label">Attack to use</label>
-                <div className="text-sm text-slate-300">
-                  {(pool.find((c) => c.id === (attackerId ?? activeId))?.attacks ?? [])[0]?.name ?? ""}
-                </div>
-              </div>
-
-              <div>
-                <button
-                  className="btn bg-indigo-600 text-white w-full"
-                  onClick={handleAttackRoll}
-                >
-                  🎲 Roll Attack
-                </button>
-              </div>
+        {/* Action container: 3 equal columns */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* --- LEFT: Character card --- */}
+          <div className="p-3 rounded-xl border border-slate-700 bg-slate-900/30 flex flex-col justify-between">
+            <div>
+              <label className="label">Character</label>
+              <select
+                className="select w-full mt-2"
+                value={attackerId ?? ""}
+                onChange={(e) => setAttackerId(e.target.value || null)}
+              >
+                {pool.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name} (Team {c.team ?? 1})
+                  </option>
+                ))}
+              </select>
             </div>
-          )}
 
-          {/* Stage 2 - show roll, allow extra bonus, reroll or apply */}
-          {attackStage === 2 && attackRoll && (
-            <div className="space-y-3">
-              <div className="p-3 rounded-xl bg-slate-900/50 border border-slate-700">
-                <div className="flex items-center gap-3">
-                  <div>
-                    <div className="text-xs text-slate-400">d20 roll</div>
-                    <div className="text-lg font-semibold">{attackRoll.raw}</div>
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-xs text-slate-400">Base total</div>
-                    <div className="text-lg font-semibold">{attackRoll.total}</div>
-                    <div className="text-sm text-slate-400 mt-1">
-                      {attackRoll.parts ?? ""}
-                      {attackPreBonusUsed ? ` · pre bonus ${attackPreBonusUsed >= 0 ? "+" : ""}${attackPreBonusUsed}` : ""}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-xs text-slate-400">AC</div>
-                    <div className="text-lg font-semibold">
-                      {pool.find((c) => c.id === targetId)?.ac ?? "-"}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-3">
-                  <div className="inline-flex items-center gap-2">
-                    {attackRoll.raw === 20 && <span className="text-green-400">💥 NAT 20</span>}
-                    {attackRoll.raw === 1 && <span className="text-red-400">❌ NAT 1</span>}
-                  </div>
-                </div>
+            {/* bottom: Action select (half) + [bonus input | Adv | Dis] (other half) */}
+            <div className="mt-3 flex gap-2">
+              <div className="w-1/2">
+                <label className="label">Action</label>
+                <select
+                  className="select w-full mt-2"
+                  value={attackChoice}
+                  onChange={(e) => setAttackChoice(e.target.value)}
+                >
+                  {(
+                    pool.find((c) => c.id === (attackerId ?? activeId))?.attacks ?? []
+                  ).map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name} (toHit +{a.toHitMod}, dmg {a.damage})
+                    </option>
+                  ))}
+                </select>
               </div>
-
-              <div className="grid md:grid-cols-3 gap-3 items-end">
-                <div>
-                  <label className="label">Extra bonus (apply when you press Apply)</label>
+              
+              <div className="flex-1 flex gap-2 items-end">
+                {/* bonus input switches meaning with stage:
+                    stage1 -> attackBonusInput (pre-roll)
+                    stage2 -> attackExtraInput (extra showing preview)
+                    stage3 -> damageBonusInput (damage bonus) */}
+                <div className="w-3/4">
+                  <label className="label">Extra bonus</label>
                   <input
                     type="number"
                     className="input w-full"
-                    value={attackExtraInput}
-                    onChange={(e) => setAttackExtraInput(e.target.value)}
-                    placeholder="+0"
+                    placeholder="Extra bonus"
+                    value={
+                      attackStage === 1
+                        ? attackBonusInput
+                        : attackStage === 2
+                        ? attackExtraInput
+                        : damageBonusInput
+                    }
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (attackStage === 1) setAttackBonusInput(v);
+                      else if (attackStage === 2) setAttackExtraInput(v);
+                      else setDamageBonusInput(v);
+                    }}
                   />
                 </div>
+                <div className="w-2/4">
+                  <label className="label">Adv / Dis</label>
+                  <button
+                    className={`btn w-16 text-center ${
+                      advantageMode === "advantage"
+                        ? "bg-green-600 text-white"
+                        : advantageMode === "disadvantage"
+                        ? "bg-red-600 text-white"
+                        : "bg-slate-700 text-white"
+                    }`}
+                    onClick={() => {
+                      setAdvantageMode((prev) =>
+                        prev === "normal"
+                          ? "advantage"
+                          : prev === "advantage"
+                          ? "disadvantage"
+                          : "normal"
+                      );
+                    }}
+                  >
+                    {advantageMode === "normal" && "--"}
+                    {advantageMode === "advantage" && "Adv"}
+                    {advantageMode === "disadvantage" && "Dis"}
+                  </button>
+                </div>
 
-                <div className="md:col-span-2 flex gap-2">
-                  <button className="btn-normal flex-1" onClick={handleAttackReroll}>
-                    🔄 Re-roll
-                  </button>
-                  <button className="btn bg-indigo-600 text-white flex-1" onClick={handleAttackApply}>
-                    ✅ Apply
-                  </button>
+              </div>
+            </div>
+          </div>
+
+          {/* --- MIDDLE: Rolls display (Attack Roll / Damage Roll) --- */}
+          <div className="p-3 rounded-xl border border-slate-700 bg-slate-900/20 flex flex-col justify-around">
+            {/* labels row */}
+            <div className="flex items-center justify-around">
+              <div className="text-xs text-slate-400">Attack Roll</div>
+              <div className="text-xs text-slate-400">Damage Roll</div>
+            </div>
+
+            {/* two lines area */}
+            <div className="mt-3 space-y-3">
+              {/* LINE 1: base expressions (always shown) */}
+              <div className="flex items-center justify-around">
+                {/* left: base attack expression */}
+                <div className="text-sm text-slate-200">
+                  {/* show d20+<atkMod> */}
+                  {(() => {
+                    const a = pool.find((c) => c.id === (attackerId ?? activeId));
+                    const attack = a?.attacks.find((x) => x.id === attackChoice) ?? a?.attacks[0];
+                    const toHit = attack?.toHitMod ?? 0;
+                    return <span>d20{toHit >= 0 ? `+${toHit}` : `${toHit}`}</span>;
+                  })()}
+                </div>
+
+                {/* right: base damage expression */}
+                <div className="text-sm text-slate-200">
+                  {(() => {
+                    const a = pool.find((c) => c.id === (attackerId ?? activeId));
+                    const attack = a?.attacks.find((x) => x.id === attackChoice) ?? a?.attacks[0];
+                    return <span>{attack?.damage ?? "-"}</span>;
+                  })()}
+                </div>
+              </div>
+
+              {/* LINE 2: preview / result details (stage2 and stage3) */}
+              <div className="flex items-center justify-around">
+                {/* left: attack detail */}
+                <div className="text-sm">
+                  {attackStage === 1 ? (
+                    <span className="text-slate-400 italic">Roll to preview details</span>
+                  ) : (
+                    // stage 2 or 3: show preview or final; include "Hit"/"Miss" prefix in stage 3
+                    (() => {
+                      const previewExtra = parseInt(attackExtraInput || "0", 10) || 0;
+                      const baseTotal = attackRoll?.total ?? 0;
+                      const previewTotal = (attackFinalTotal ?? ((baseTotal) + previewExtra));
+                      const parts = `${attackRoll?.parts ?? ""}${previewExtra ? (attackRoll?.parts ? `+${previewExtra}` : `+${previewExtra}`) : ""}`;
+                      const prefix = attackStage === 3 ? (attackPassed ? "Hit " : "Miss ") : "";
+                      return (
+                        <span className={`${attackStage === 3 ? (attackPassed ? "text-green-400 font-semibold" : "text-red-400 font-semibold") : "text-slate-200"}`}>
+                          {prefix}{previewTotal ?? "-"} {parts ? `(${parts})` : ""}
+                        </span>
+                      );
+                    })()
+                  )}
+                </div>
+
+                {/* right: damage detail (only shows in stage3 or stage2 preview is empty) */}
+                <div className="text-sm text-right">
+                  {attackStage === 1 ? (
+                    <span className="text-slate-400 italic">-</span>
+                  ) : attackStage === 2 ? (
+                    <span className="text-slate-400 italic">not rolled</span>
+                  ) : (
+                    // stage 3: show damage roll and possible damage bonus preview
+                    (() => {
+                      const db = parseInt(damageBonusInput || "0", 10) || 0;
+                      const baseD = damageRoll?.total ?? 0;
+                      const parts = damageRoll?.parts ?? "";
+                      const total = baseD + db;
+                      return <span>{total ?? "-"} {parts ? `(${parts}${db ? `+${db}` : ""})` : (db ? `(+${db})` : "")}</span>;
+                    })()
+                  )}
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* --- RIGHT: Target card --- */}
+          <div className="p-3 rounded-xl border border-slate-700 bg-slate-900/30 flex flex-col justify-between">
+            <div>
+              <label className="label">Target</label>
+              <select
+                className="select w-full mt-2"
+                value={targetId ?? ""}
+                onChange={(e) => setTargetId(e.target.value || null)}
+              >
+                {pool.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name} (AC {c.ac}, Team {c.team ?? 1})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* lower area intentionally left blank per your spec */}
+            <div className="mt-3 text-sm text-slate-400 italic"> </div>
+          </div>
+        </div>
+
+        {/* Action buttons area (bottom) */}
+        <div className="flex gap-3">
+          {attackStage === 1 && (
+            <>
+              <button
+                className="btn bg-indigo-600 hover:bg-indigo-700 text-white"
+                onClick={handleAttackRoll}
+                disabled={!attackChoice || !(attackerId ?? activeId) || !targetId}
+              >
+                Roll for Action
+              </button>
+              {/* invisible placeholder so width feels balanced */}
+              <div className="flex-1" />
+            </>
           )}
 
-          {/* Stage 3 - show final attack, whether it hit, and damage options */}
+          {attackStage === 2 && (
+            <>
+              <button
+                className="btn bg-indigo-600 hover:bg-indigo-700 text-white"
+                onClick={handleAttackApply} /* "Result" applies the extra so it's named Result */
+                disabled={!attackRoll}
+              >
+                See Result
+              </button>
+
+              <button
+                className="btn-normal"
+                onClick={handleAttackReroll}
+                disabled={!attackRoll}
+              >
+                Reroll
+              </button>
+            </>
+          )}
+
           {attackStage === 3 && (
-            <div className="space-y-3">
-              {/* Attack summary */}
-              <div className="p-3 rounded-xl bg-slate-900/50 border border-slate-700">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-xs text-slate-400">Attack Roll</div>
-                    <div className="text-lg font-semibold">
-                      {attackFinalTotal ?? attackRoll?.total ?? "-"}
-                    </div>
-                    <div className="text-sm text-slate-400 mt-1">
-                      (d20 {attackRoll?.raw} {attackRoll?.parts ?? ""})
-                    </div>
-                  </div>
+            <>
+              <button
+                className="btn bg-indigo-600 hover:bg-indigo-700 text-white"
+                onClick={handleDamageApplyAndLog}
+                disabled={attackPassed === null}
+              >
+                Apply Action
+              </button>
 
-                  <div className="text-right">
-                    {attackPassed ? (
-                      <div className="text-green-400 font-semibold">✅ Hit</div>
-                    ) : (
-                      <div className="text-red-400 font-semibold">❌ Miss</div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Damage block (only shown if it hit) */}
-              {/* {attackPassed ? (
-                <> */}
-                  <div className="p-3 rounded-xl bg-slate-900/50 border border-slate-700">
-                    <div className="text-sm text-slate-400">Damage roll</div>
-                    <div className="text-lg font-semibold">{damageRoll?.total ?? "-"}</div>
-                    <div className="text-sm text-slate-400 mt-1">{damageRoll?.parts ?? ""}</div>
-                  </div>
-
-                  <div className="grid md:grid-cols-3 gap-3 items-end">
-                    <div>
-                      <label className="label">Damage Bonus</label>
-                      <input
-                        type="number"
-                        className="input w-full"
-                        value={damageBonusInput}
-                        onChange={(e) => setDamageBonusInput(e.target.value)}
-                        placeholder="+0"
-                      />
-                    </div>
-
-                    <div className="md:col-span-2 flex gap-2">
-                      <button className="btn-normal flex-1" onClick={handleBackToAttack}>
-                        ⬅ Back
-                      </button>
-                      <button className="btn bg-indigo-600 text-white flex-1" onClick={handleDamageApplyAndLog}>
-                        Apply & Log
-                      </button>
-                    </div>
-                  </div>
-                {/* </>
-              ) : (
-                // Miss: no damage input, still allow back or log the miss
-                <div className="flex gap-2">
-                  <button className="btn-normal flex-1" onClick={handleBackToAttack}>⬅ Back</button>
-                  <button className="btn bg-indigo-600 text-white flex-1" onClick={handleDamageApplyAndLog}>Log Miss</button>
-                </div>
-              )} */}
-            </div>
+            </>
           )}
-        </div>
-
-
-        <div className="flex gap-2">
-          <button
-            className="btn bg-indigo-600 hover:bg-indigo-700 text-white"
-            onClick={doAttack}
-          >
-            Roll Attack
-          </button>
-          <button className="btn-normal" onClick={() => setLog([])}>
-            Clear log
-          </button>
-        </div>
-
-        {/* Settings + Log */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <label className="label">Battle Log</label>
-            <div className="flex items-center gap-2 text-xs">
-              <label className="flex items-center gap-1">
-                <input
-                  type="checkbox"
-                  className="h-3.5 w-3.5"
-                  checked={settings.newestFirst}
-                  onChange={(e) =>
-                    setSettings((s) => ({
-                      ...s,
-                      newestFirst: e.target.checked,
-                    }))
-                  }
-                />
-                Newest first
-              </label>
-              <label className="flex items-center gap-1">
-                <input
-                  type="checkbox"
-                  className="h-3.5 w-3.5"
-                  checked={settings.compact}
-                  onChange={(e) =>
-                    setSettings((s) => ({ ...s, compact: e.target.checked }))
-                  }
-                />
-                Compact
-              </label>
-            </div>
-          </div>
-
-          <div className="card bg-blue-500/10 border-slate-800 min-h-[160px] max-h-80 overflow-auto">
-            {log.length === 0 ? (
-              <p className="text-slate-400 text-sm px-3 py-2">No events yet…</p>
-            ) : (
-              <ul className="divide-y divide-slate-800">
-                {(settings.newestFirst ? [...log] : [...log].reverse()).map(
-                  (e) => {
-                    const crit = e.isCrit ? "bg-green-600 text-white" : "";
-                    const fumble = e.isFumble ? "bg-red-600 text-white" : "";
-                    const hitBadge = e.passed
-                      ? `bg-emerald-700 text-emerald-100`
-                      : `bg-red-700 text-red-100`;
-                    const dmgBadge =
-                      e.damage != null ? "bg-yellow-700 text-yellow-100" : "";
-                    const koBadge = e.died ? "bg-red-800 text-white" : "";
-                    const density = settings.compact ? "py-1" : "py-2";
-
-                    return (
-                      <li key={e.id} className={`px-3 ${density}`}>
-                        <div className={`flex flex-wrap items-center gap-2 text-sm`}>
-                          {/* Attacker */}
-                          <span
-                            className={`badge ${TEAM_BG[e.attackerTeam]} text-white`}
-                          >
-                            {e.attackerName}
-                          </span>
-
-                          <span className="text-slate-400">→</span>
-
-                          {/* Target */}
-                          <span
-                            className={`badge ${TEAM_BG[e.targetTeam]} text-white`}
-                          >
-                            {e.targetName}
-                          </span>
-
-                          {/* Hit/Miss + Crit/Fumble */}
-                          <span className={`badge ${hitBadge}`}>
-                            {e.passed ? "HIT" : "MISS"} {e.total}
-                            <span className="opacity-70">
-                              {" "}
-                              {/* (d20 {e.raw}
-                              {e.toHitMod >= 0
-                                ? `+${e.toHitMod}`
-                                : `${e.toHitMod}`}
-                              ) */}
-                              {e.parts} 
-                            </span>
-                          </span>
-
-                          {e.isCrit && (
-                            <span className={`badge ${crit}`}>💥 NAT 20</span>
-                          )}
-                          {e.isFumble && (
-                            <span className={`badge ${fumble}`}>❌ NAT 1</span>
-                          )}
-
-                          {/* Damage inline on the same line */}
-                          {e.damage != null && (
-                            <span className={`badge ${dmgBadge}`}>
-                              DMG {e.damage}
-                            </span>
-                          )}
-
-                          {/* KO */}
-                          {e.died && (
-                            <span className={`badge ${koBadge}`}>☠ K.O.</span>
-                          )}
-
-                          {/* Timestamp (small, subtle) */}
-                          <span
-                            className={`ml-auto text-xs ${TEAM_TEXT[e.attackerTeam]} opacity-70`}
-                          >
-                            {new Date(e.ts).toLocaleTimeString()}
-                          </span>
-                        </div>
-                      </li>
-                    );
-                  }
-                )}
-              </ul>
-            )}
-          </div>
         </div>
       </div>
+
+
+      {/* <div className="flex gap-2">
+        <button
+          className="btn bg-indigo-600 hover:bg-indigo-700 text-white"
+          onClick={doAttack}
+        >
+          Roll Attack
+        </button>
+        <button className="btn-normal" onClick={() => setLog([])}>
+          Clear log
+        </button>
+      </div> */}
+
+      {/* Settings + Log */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <label className="label">Battle Log</label>
+          <div className="flex items-center gap-2 text-xs">
+            <label className="flex items-center gap-1">
+              <input
+                type="checkbox"
+                className="h-3.5 w-3.5"
+                checked={settings.newestFirst}
+                onChange={(e) =>
+                  setSettings((s) => ({
+                    ...s,
+                    newestFirst: e.target.checked,
+                  }))
+                }
+              />
+              Newest first
+            </label>
+            <label className="flex items-center gap-1">
+              <input
+                type="checkbox"
+                className="h-3.5 w-3.5"
+                checked={settings.compact}
+                onChange={(e) =>
+                  setSettings((s) => ({ ...s, compact: e.target.checked }))
+                }
+              />
+              Compact
+            </label>
+          </div>
+        </div>
+
+        <div className="card bg-blue-500/10 border-slate-800 min-h-[160px] max-h-80 overflow-auto">
+          {log.length === 0 ? (
+            <p className="text-slate-400 text-sm px-3 py-2">No events yet…</p>
+          ) : (
+            <ul className="divide-y divide-slate-800">
+              {(settings.newestFirst ? [...log] : [...log].reverse()).map(
+                (e) => {
+                  const crit = e.isCrit ? "bg-green-600 text-white" : "";
+                  const fumble = e.isFumble ? "bg-red-600 text-white" : "";
+                  const hitBadge = e.passed
+                    ? `bg-emerald-700 text-emerald-100`
+                    : `bg-red-700 text-red-100`;
+                  const dmgBadge =
+                    e.damage != null ? "bg-yellow-700 text-yellow-100" : "";
+                  const koBadge = e.died ? "bg-red-800 text-white" : "";
+                  const density = settings.compact ? "py-1" : "py-2";
+
+                  return (
+                    <li key={e.id} className={`px-3 ${density}`}>
+                      <div className={`flex flex-wrap items-center gap-2 text-sm`}>
+                        {/* Attacker */}
+                        <span
+                          className={`badge ${TEAM_BG[e.attackerTeam]} text-white`}
+                        >
+                          {e.attackerName}
+                        </span>
+
+                        <span className="text-slate-400">→</span>
+
+                        {/* Target */}
+                        <span
+                          className={`badge ${TEAM_BG[e.targetTeam]} text-white`}
+                        >
+                          {e.targetName}
+                        </span>
+
+                        {/* Hit/Miss + Crit/Fumble */}
+                        <span className={`badge ${hitBadge}`}>
+                          {e.passed ? "HIT" : "MISS"} {e.total}
+                          <span className="opacity-70">
+                            {" "}
+                            {/* (d20 {e.raw}
+                            {e.toHitMod >= 0
+                              ? `+${e.toHitMod}`
+                              : `${e.toHitMod}`}
+                            ) */}
+                            {e.parts} 
+                          </span>
+                        </span>
+
+                        {e.isCrit && (
+                          <span className={`badge ${crit}`}>💥 NAT 20</span>
+                        )}
+                        {e.isFumble && (
+                          <span className={`badge ${fumble}`}>❌ NAT 1</span>
+                        )}
+
+                        {/* Damage inline on the same line */}
+                        {e.damage != null && (
+                          <span className={`badge ${dmgBadge}`}>
+                            DMG {e.damage}
+                          </span>
+                        )}
+
+                        {/* KO */}
+                        {e.died && (
+                          <span className={`badge ${koBadge}`}>☠ K.O.</span>
+                        )}
+
+                        {/* Timestamp (small, subtle) */}
+                        <span
+                          className={`ml-auto text-xs ${TEAM_TEXT[e.attackerTeam]} opacity-70`}
+                        >
+                          {new Date(e.ts).toLocaleTimeString()}
+                        </span>
+                      </div>
+                    </li>
+                  );
+                }
+              )}
+            </ul>
+          )}
+        </div>
+      </div>
+
     </section>
   );
 }
