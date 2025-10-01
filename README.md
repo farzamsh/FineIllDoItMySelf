@@ -119,8 +119,8 @@ Stage 1: Making the app playable with manual modifications for not supported fea
    - ✅ In logs
 3. Two step attacks in battle page, first show the dice and access to add or change or reroll
    - ✅ Building new attack card and the two steps
-   - Dice format support for added amount to the dice
-   - Cleaning the code and deleting the old format
+   - ✅ Dice format support for added amount to the dice
+   - ✅ Cleaning the code and deleting the old format
    - ✅ UI improvment of the attack card
 4. Adding saving throws to character sheet
 5. Adding Attack types of attack roll, DC based and auto hit
@@ -132,6 +132,7 @@ Stage 2: Providing easier gameplay with adding all dice rolls and checks
 2. Adding Grapple, Shove as default actions and Athletic and Acrobatic checks to sheet
 3. Adding ability checks, proficiencies and advantages in them
 4. Hidden mode to hide enemies' HP and AC for Projection mode
+5. Nat 1 and 20 implication on attack pass and damage
 
 Stage 3: Improving overall layout and add a bit automation
 

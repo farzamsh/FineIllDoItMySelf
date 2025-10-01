@@ -80,16 +80,20 @@ export default function BattleView({
   // ---------- Attack 3-step UI state ----------
   const [attackStage, setAttackStage] = useState<1 | 2 | 3>(1);
 
-  // Inputs
+  // Bonus Inputs
   const [attackBonusInput, setAttackBonusInput] = useState<string>(""); // stage1 attack bonus input
   const [damageBonusInput, setDamageBonusInput] = useState<string>(""); // stage3 damage bonus input
+
+  // Input Rolls
+  const [attackBonusRoll, setAttackBonusRoll] = useState<any | null>(null);
+  const [damageBonusRoll, setDamageBonusRoll] = useState<any | null>(null);
 
   // Stored roll results
   const [attackRoll, setAttackRoll] = useState<any | null>(null); // original d20 roll object from d20()
   const [attackPassed, setAttackPassed] = useState<boolean | null>(null); // whether it hit (computed on Apply)
   const [damageRoll, setDamageRoll] = useState<any | null>(null); // damage roll result (if any)
 
-  // ------- Functions for the flow -------
+  // stage1 -> stage2
   function handleAttackRoll() {
     const currentAttackerId = attackerId ?? activeId;
     const atkOwner = pool.find((c) => c.id === currentAttackerId);
@@ -104,6 +108,10 @@ export default function BattleView({
     setAttackRoll(roll);
     setAttackStage(2);
   }
+  useEffect(() => {
+    const roll = attackBonusInput ? rollDice(attackBonusInput) : { total: 0, parts: [] };
+    setAttackBonusRoll(roll);
+  }, [attackBonusInput]);
 
   function handleAttackReroll() {
     // reroll using same attacker/attack and the stored pre-bonus
@@ -119,6 +127,7 @@ export default function BattleView({
     setDamageBonusInput("");
   }
 
+  // stage2 -> stage3
   function handleAttackApply() {
     // apply any stage-2 extra bonus to the existing roll, decide hit/miss, and move to stage 3
     const currentAttackerId = attackerId ?? activeId;
@@ -128,14 +137,27 @@ export default function BattleView({
     const attack = atkOwner.attacks.find((a) => a.id === attackChoice) ?? atkOwner.attacks[0];
     if (!attack) return;
 
-    const attackBonus = parseInt(attackBonusInput || "0", 10) || 0;
-    const finalTotal = (attackRoll.total ?? 0) + attackBonus;
+    // const bonusRoll = attackBonusInput ? rollDice(attackBonusInput) : { total: 0, parts: [] };
+    const bonusRoll = attackBonusRoll ?? { total: 0, parts: [] };
+    const finalTotal = (attackRoll.total ?? 0) + bonusRoll.total;
+    const mergedParts = [...(attackRoll.parts || []), ...(bonusRoll.parts || [])];
+    
+    setAttackRoll({
+      ...attackRoll,
+      total: (attackRoll.total ?? 0) + bonusRoll.total,
+      parts: mergedParts,
+    });
+    setAttackBonusInput("")
     const passed = finalTotal >= tgt.ac;
     setAttackPassed(passed);
     const dmg = rollDice(attack.damage);
     setDamageRoll(dmg);
     setAttackStage(3);
   }
+  useEffect(() => {
+    const roll = damageBonusInput ? rollDice(damageBonusInput) : { total: 0, parts: [] };
+    setDamageBonusRoll(roll);
+  }, [damageBonusInput]);
 
   function handleDamageApplyAndLog() {
     const currentAttackerId = attackerId ?? activeId;
@@ -146,8 +168,8 @@ export default function BattleView({
     if (!attack) return;
 
     // compute final attack total (may already be set)
-    const attackBonus = parseInt(attackBonusInput || "0", 10) || 0;
-    const finalTotal = attackRoll.total + attackBonus;
+    const bonusRoll = attackBonusRoll ?? { total: 0, parts: [] };
+    const finalTotal = (attackRoll.total ?? 0) + bonusRoll.total;
     
     // remember last selections for this attacker
     setLastAttackByAttacker((m) => ({ ...m, [atkOwner.id]: attack.id }));
@@ -157,14 +179,18 @@ export default function BattleView({
     let finalDamage: number = 0;
     let died = false;
 
+    // const bonusDmgRoll = damageBonusInput ? rollDice(damageBonusInput) : { total: 0, parts: [] };
+    const bonusDmgRoll = damageBonusRoll ?? { total: 0, parts: [] };
     const dmgBase = attackPassed ? (damageRoll?.total ?? 0) : 0;
-    const dmgBonus = parseInt(damageBonusInput || "0", 10) || 0;
-    finalDamage = dmgBase + dmgBonus;
+    finalDamage = dmgBase + bonusDmgRoll.total;
     const hpAfter = applyDamage(tgt, finalDamage);
     died = hpAfter === 0;
 
     // Build parts string: show original parts and appended extras so it's visible in log
-    const partsStr = `${attackRoll.parts.join("") ?? ""}+${attackBonusInput}`;
+    const parts = [
+      ...(attackRoll.parts || []),
+      ...(bonusRoll.parts || [])
+    ].join("");
 
     // Log entry (keep shape similar to existing entries)
     const entry: LogEntry = {
@@ -178,7 +204,7 @@ export default function BattleView({
       targetTeam: (tgt.team ?? 1) as TeamId,
       toHitMod: attack.toHitMod,
       raw: attackRoll.raw,
-      parts: partsStr,
+      parts: parts,
       total: finalTotal ?? 0,
       passed: !!attackPassed,
       isCrit: attackRoll.raw === 20,
@@ -472,21 +498,13 @@ export default function BattleView({
               </div>
               
               <div className="flex-1 flex gap-2 items-end">
-                {/* bonus input switches meaning with stage:
-                    stage1 -> attackBonusInput (pre-roll)
-                    stage2 -> attackExtraInput (extra showing preview)
-                    stage3 -> damageBonusInput (damage bonus) */}
                 <div className="w-3/4">
                   <label className="label">Extra bonus</label>
                   <input
-                    type="number"
+                    type="text"
                     className="input w-full"
-                    placeholder="Extra bonus"
-                    value={
-                      attackStage === 3
-                        ? damageBonusInput
-                        : attackBonusInput
-                    }
+                    placeholder="Bonus (e.g. +2, 1d4-1)"
+                    value={attackStage === 3 ? damageBonusInput : attackBonusInput}
                     onChange={(e) => {
                       const v = e.target.value;
                       if (attackStage === 3) setDamageBonusInput(v);
@@ -543,21 +561,25 @@ export default function BattleView({
                       const a = pool.find((c) => c.id === (attackerId ?? activeId));
                       const attack = a?.attacks.find((x) => x.id === attackChoice) ?? a?.attacks[0];
                       const toHit = attack?.toHitMod ?? 0;
-                      const Extra = parseInt(attackBonusInput || "0", 10) || 0;
+                      const Extra = attackBonusInput;
                       return <span>d20{toHit != 0 && (toHit > 0 ? `+${toHit}` : `${toHit}`)}
-                      {Extra != 0 && (Extra >= 0 ? `+${Extra}` : `${Extra}`)}</span>;
+                      {Extra !== "" && (!Extra.startsWith("+") && !Extra.startsWith("-") ? `+${Extra}` : Extra)}</span>;
                     })()
                   ) : (
                     // stage 2 or 3: show preview or final; include "Hit"/"Miss" prefix in stage 3
                     (() => {
-                      const Extra = parseInt(attackBonusInput || "0", 10) || 0;
+                      const bonusRoll = attackBonusRoll ?? { total: 0, parts: [] };
                       const baseTotal = attackRoll?.total ?? 0;
-                      const previewTotal = baseTotal + Extra;
-                      const parts = `${attackRoll?.parts.join("") ?? ""}${Extra ? `+${Extra}` : ""}`;
+                      const previewTotal = baseTotal + bonusRoll.total;
+
+                      const parts = [
+                        ...(attackRoll?.parts || []),
+                        ...bonusRoll.parts
+                      ].join("");
                       const prefix = attackStage === 3 ? (attackPassed ? "Hit " : "Miss ") : "";
                       return (
                         <span className={`${attackStage === 3 ? (attackPassed ? "text-green-400 font-semibold" : "text-red-400 font-semibold") : "text-slate-200"}`}>
-                          {prefix}{previewTotal ?? "-"} {parts ? `(${parts})` : ""}
+                          {prefix}{previewTotal ?? "-"} {parts ? `${parts}` : ""}
                         </span>
                       );
                     })()
@@ -569,11 +591,16 @@ export default function BattleView({
                   {attackStage === 3 ? (
                     // stage 3: show damage roll and possible damage bonus preview
                     (() => {
-                      const db = parseInt(damageBonusInput || "0", 10) || 0;
+                      // const bonusDmgRoll = damageBonusInput ? rollDice(damageBonusInput) : { total: 0, parts: [] };
+                      const bonusDmgRoll = damageBonusRoll ?? { total: 0, parts: [] }
                       const baseD = damageRoll?.total ?? 0;
-                      const parts = damageRoll?.parts.join("") ?? "";
-                      const total = baseD + db;
-                      return <span>{total ?? "-"} {parts ? `(${parts}${db ? `+${db}` : ""})` : (db ? `(+${db})` : "")}</span>;
+                      const total = baseD + bonusDmgRoll.total;
+
+                      const parts = [
+                        ...(damageRoll?.parts || []),
+                        ...bonusDmgRoll.parts
+                      ].join("");
+                      return <span>{total} ({parts})</span>;
                     })()
                   ) : (
                     (() => {
