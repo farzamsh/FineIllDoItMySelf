@@ -1,6 +1,35 @@
 import React, { useMemo, useState } from "react";
-import type { Combatant, TeamId, Status } from "../types";
+import type { Combatant, TeamId, Status, Ability } from "../types";
 import { saveState } from "../lib/storage";
+import { rollDice, d20 } from "../lib/dice"; // your dice roller
+
+function rollAbility(
+  c: Combatant,
+  ab: Ability,
+  type: "check" | "save",
+  bonusInput: string,
+  advMode: "normal" | "advantage" | "disadvantage"
+) {
+  const modifier = type === "check" ? c.checks?.[ab] ?? 0 : c.savingThrows?.[ab] ?? 0;
+
+  // roll d20 with adv/dis already handled by your helper
+  const roll = d20(modifier, advMode); // assume this returns { raw, total, parts }
+
+  // roll any extra bonus dice or number
+  const bonus = bonusInput ? rollDice(bonusInput) : { total: 0, parts: [] };
+
+  // final total
+  const total = roll.total + bonus.total;
+
+  const parts = [
+    ...(roll.parts || []),
+    ...(bonus.parts || [])
+  ].join("");
+
+  return `${total} ${parts}`;
+}
+
+
 
 type Props = {
   combatants: Combatant[];
@@ -31,6 +60,10 @@ const TEAM_BADGE: Record<TeamId, string> = {
 
 export default function RosterManager({ combatants, setCombatants }: Props) {
   const [filter, setFilter] = useState("");
+  const [checkResult, setCheckResult] = useState<string>("Click on Check or Saving to roll");
+  const [bonusInput, setBonusInput] = useState<string>("");
+  const [advMode, setAdvMode] = useState<"normal" | "advantage" | "disadvantage">("normal");
+
 
   const filtered = useMemo(() => {
     const f = filter.trim().toLowerCase();
@@ -104,48 +137,51 @@ export default function RosterManager({ combatants, setCombatants }: Props) {
                   value={c.name}
                   onChange={(e) => update({ ...c, name: e.target.value })}
                 />
-                <select
-                  className="select"
-                  value={c.type}
-                  onChange={(e) =>
-                    update({ ...c, type: e.target.value as Combatant["type"] })
-                  }
-                >
-                  <option>PC</option>
-                  <option>NPC</option>
-                  <option>Monster</option>
-                </select>
+                <div className="flex items-center gap-2">
+                  <label className="label ml-3">In fight?</label>
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4"
+                    checked={!!c.inEncounter}
+                    onChange={(e) =>
+                      update({ ...c, inEncounter: e.target.checked })
+                    }
+                  />
+                  <div></div>
+                </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
-                <label className="label">Team</label>
-                <select
-                  className="select"
-                  value={team}
-                  onChange={(e) =>
-                    update({ ...c, team: Number(e.target.value) as TeamId })
-                  }
-                >
-                  <option value={1}>1</option>
-                  <option value={2}>2</option>
-                  <option value={3}>3</option>
-                  <option value={4}>4</option>
-                  <option value={5}>5</option>
-                </select>
-
-                <span className={`badge ${TEAM_BADGE[team]} text-white`}>
-                  Team {team}
-                </span>
-
-                <label className="label ml-3">In fight?</label>
-                <input
-                  type="checkbox"
-                  className="h-4 w-4"
-                  checked={!!c.inEncounter}
-                  onChange={(e) =>
-                    update({ ...c, inEncounter: e.target.checked })
-                  }
-                />
+              <div className="flex flex-wrap justify-between items-center gap-2">
+                <div className="flex flex-wrap justify-between items-center gap-2">
+                  <label className="label">Team</label>
+                  <select
+                    className="select"
+                    value={team}
+                    onChange={(e) =>
+                      update({ ...c, team: Number(e.target.value) as TeamId })
+                    }
+                  >
+                    <option value={1}>1</option>
+                    <option value={2}>2</option>
+                    <option value={3}>3</option>
+                    <option value={4}>4</option>
+                    <option value={5}>5</option>
+                  </select>
+                </div>
+                <div className="flex flex-wrap justify-between items-center gap-2">
+                  <label className="label">Type</label>
+                  <select
+                    className="select"
+                    value={c.type}
+                    onChange={(e) =>
+                      update({ ...c, type: e.target.value as Combatant["type"] })
+                    }
+                  >
+                    <option>PC</option>
+                    <option>NPC</option>
+                    <option>Monster</option>
+                  </select>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3 text-sm">
@@ -222,6 +258,102 @@ export default function RosterManager({ combatants, setCombatants }: Props) {
                   }
                 />
               </div>
+
+              {/* Ability Checks and Saving Throws */}
+              <div>
+                <label className="label">Abilities</label>
+                <div className="grid grid-cols-2">
+                  {(["STR", "DEX", "CON", "INT", "WIS", "CHA"] as Ability[]).map((ab) => (
+                    <div
+                      key={ab}
+                      className="flex items-center gap-1 p-1"
+                    >
+                      {/* Ability name */}
+                      <label className="label w-6 font-semibold text-center pt-5">{ab}</label>
+                
+                      {/* Check column */}
+                      <div className="flex flex-col items-center flex-1">
+                        <button
+                          className="text-xs text-indigo-400 hover:underline mb-1"
+                          onClick={() => {
+                            const roll = rollAbility(c, ab, "check", bonusInput, advMode);
+                            setCheckResult(roll);
+                          }}
+                        >
+                          Check
+                        </button>
+                        <input
+                          type="number"
+                          className="input w-full text-center"
+                          value={c.checks?.[ab] ?? 0}
+                          onChange={(e) => {
+                            const newVal = parseInt(e.target.value) || 0;
+                            update({ ...c, checks: { ...c.checks, [ab]: newVal } });
+                          }}
+                        />
+                      </div>
+                
+                      {/* Saving column */}
+                      <div className="flex flex-col items-center flex-1">
+                        <button
+                          className="text-xs text-indigo-400 hover:underline mb-1"
+                          onClick={() => {
+                            const roll = rollAbility(c, ab, "save", bonusInput, advMode);
+                            setCheckResult(roll);
+                          }}
+                        >
+                          Saving
+                        </button>
+                        <input
+                          type="number"
+                          className="input w-full text-center"
+                          value={c.savingThrows?.[ab] ?? 0}
+                          onChange={(e) => {
+                            const newVal = parseInt(e.target.value) || 0;
+                            update({ ...c, savingThrows: { ...c.savingThrows, [ab]: newVal } });
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+
+                {/* Bonus input + adv/dis */}
+                <div className="flex items-end gap-3 mt-3">
+                  <div className="flex-1">
+                    <label className="label">Bonus</label>
+                    <input
+                      className="input w-full"
+                      placeholder="+1 or 1d4"
+                      value={bonusInput}
+                      onChange={(e) => setBonusInput(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <label className="label">Adv / Dis</label>
+                    <button
+                      className={`btn w-20 ${
+                        advMode === "advantage" ? "bg-green-600 text-white" :
+                        advMode === "disadvantage" ? "bg-red-600 text-white" : ""
+                      }`}
+                      onClick={() =>
+                        setAdvMode((prev) =>
+                          prev === "normal" ? "advantage" : prev === "advantage" ? "disadvantage" : "normal"
+                        )
+                      }
+                    >
+                      {advMode === "advantage" ? "Adv" : advMode === "disadvantage" ? "Dis" : "--"}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Result box */}
+                <div className="mt-3 p-2 rounded-lg bg-slate-900 text-center text-sm">
+                  {checkResult}
+                </div>
+              </div>
+
 
               <div>
                 <label className="label">Attacks</label>

@@ -117,12 +117,12 @@ Stage 1: Making the app playable with manual modifications for not supported fea
 2. ✅ Adding Advantage and Disadvantage to attacks
    - ✅ In attack card
    - ✅ In logs
-3. Two step attacks in battle page, first show the dice and access to add or change or reroll
+3. ✅ Two step attacks in battle page, first show the dice and access to add or change or reroll
    - ✅ Building new attack card and the two steps
    - ✅ Dice format support for added amount to the dice
    - ✅ Cleaning the code and deleting the old format
    - ✅ UI improvment of the attack card
-4. Adding saving throws to character sheet
+4. ✅ Adding saving throws to character sheet
 5. Adding Attack types of attack roll, DC based and auto hit
 6. Adding Multi choice Attack
 

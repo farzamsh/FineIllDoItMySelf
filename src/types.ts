@@ -19,6 +19,10 @@ export type Attack = {
   damage: string; // e.g. "1d8+3"
 };
 
+export type Ability = "STR" | "DEX" | "CON" | "INT" | "WIS" | "CHA";
+
+export type AbilityScores = Record<Ability, number>;
+
 export type Combatant = {
   id: string;
   name: string;
@@ -33,6 +37,10 @@ export type Combatant = {
   initMod: number;
   initiative?: number;
   attacks: Attack[];
+
+  abilityScores?: AbilityScores;
+  savingThrows?: Partial<AbilityScores>;
+  checks?: Partial<AbilityScores>;
 };
 
 export type AppState = {
