@@ -15,7 +15,8 @@ export type Status =
 export type Attack = {
   id: string;
   name: string;
-  toHitMod: number;
+  type?: "Attack Roll" | "Save DC" | "Auto Hit" | "Heal";
+  hitorDC: number;
   damage: string; // e.g. "1d8+3"
 };
 
@@ -69,7 +70,7 @@ export type LogEntry = {
   targetName: string;
   targetTeam: TeamId;
 
-  toHitMod: number;
+  hitorDC: number;
   raw: number;         // natural d20
   parts: string;       // details of roll
   total: number;       // raw + mod

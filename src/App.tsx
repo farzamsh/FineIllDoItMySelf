@@ -42,7 +42,7 @@ export default function App() {
           initMod: 3,
           status: ["Normal"],
           attacks: [
-            { id: "atk1", name: "Longsword", toHitMod: 5, damage: "1d8+3" },
+            { id: "atk1", name: "Longsword", hitorDC: 5, damage: "1d8+3" },
           ],
         },
         {
@@ -55,7 +55,7 @@ export default function App() {
           initMod: 2,
           status: ["Normal"],
           attacks: [
-            { id: "atk2", name: "Scimitar", toHitMod: 4, damage: "1d6+2" },
+            { id: "atk2", name: "Scimitar", hitorDC: 4, damage: "1d6+2" },
           ],
         },
       ];

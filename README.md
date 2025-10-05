@@ -111,7 +111,7 @@ If you have ideas for new features or better UI for logs, feel free to open an i
 
 ## 📋 To-Do List
 
-Stage 1: Making the app playable with manual modifications for not supported features
+Stage 1: Making the app viable via essential mechanics and manual modifications
 
 1. ✅ Fixing forced log clear on switching to roster bug
 2. ✅ Adding Advantage and Disadvantage to attacks
@@ -124,22 +124,29 @@ Stage 1: Making the app playable with manual modifications for not supported fea
    - ✅ UI improvment of the attack card
 4. ✅ Adding saving throws to character sheet
 5. Adding Attack types of attack roll, DC based and auto hit
+   - ✅ To the roster card
+   - To the action card
 6. Adding Multi choice Attack
 
-Stage 2: Providing easier gameplay with adding all dice rolls and checks
+Stage 2: Providing smoother gameplay and UI
 
-1. Relocating initiative rolls from battle page to character sheet and make it editable
-2. Adding Grapple, Shove as default actions and Athletic and Acrobatic checks to sheet
-3. Adding ability checks, proficiencies and advantages in them
-4. Hidden mode to hide enemies' HP and AC for Projection mode
-5. Nat 1 and 20 implication on attack pass and damage
+1. Making the initiatives editable
+2. Adding type Heal to the actions
+   - ✅ To the roster card
+   - To the action card
+3. Hidden mode to hide enemies' HP and AC for Projection mode
+4. Nat 1 and 20 implication on attack pass and damage
+5. Designing Button UIs
+6. Improving UI of roster cards on action section
 
 Stage 3: Improving overall layout and add a bit automation
 
 1. Designig different formats of attack and spell types
 2. Adding default weapons and spells
 3. Adding customable weapons and spells with ability to combine and corrolate(ones success adding another, different outcomes on fails)
-4. Building a whole turn section for each player turn with attacks, spells, slots and bonus actions
+4. Adding Grapple, Shove as default actions and Athletic and Acrobatic checks to sheet
+5. Adding ability checks, proficiencies and advantages in them
+6. Building a whole turn section for each player turn with attacks, spells, slots and bonus actions
 
 Stage 4: Full character sheet and features and Maximum automation!
 

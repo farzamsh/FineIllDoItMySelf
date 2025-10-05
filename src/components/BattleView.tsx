@@ -103,7 +103,7 @@ export default function BattleView({
     const attack = atkOwner.attacks.find((a) => a.id === attackChoice) ?? atkOwner.attacks[0];
     if (!attack) return;
 
-    const roll = d20(attack.toHitMod, advantageMode); // uses existing d20(mod, mode)
+    const roll = d20(attack.hitorDC, advantageMode); // uses existing d20(mod, mode)
     // store
     setAttackRoll(roll);
     setAttackStage(2);
@@ -120,7 +120,7 @@ export default function BattleView({
     if (!atkOwner) return;
     const attack = atkOwner.attacks.find((a) => a.id === attackChoice) ?? atkOwner.attacks[0];
     if (!attack) return;
-    const roll = d20(attack.toHitMod, advantageMode);
+    const roll = d20(attack.hitorDC, advantageMode);
     setAttackRoll(roll);
     setAttackPassed(null);
     setDamageRoll(null);
@@ -202,7 +202,7 @@ export default function BattleView({
       targetId: tgt.id,
       targetName: tgt.name,
       targetTeam: (tgt.team ?? 1) as TeamId,
-      toHitMod: attack.toHitMod,
+      hitorDC: attack.hitorDC,
       raw: attackRoll.raw,
       parts: parts,
       total: finalTotal ?? 0,
@@ -336,7 +336,7 @@ export default function BattleView({
         targetId: "system",
         targetName: `${round} → ${nextRound}`,
         targetTeam: 1 as TeamId,
-        toHitMod: 0,
+        hitorDC: 0,
         raw: 0,
         parts: '',
         total: 0,
@@ -491,7 +491,7 @@ export default function BattleView({
                     pool.find((c) => c.id === (attackerId ?? activeId))?.attacks ?? []
                   ).map((a) => (
                     <option key={a.id} value={a.id}>
-                      {a.name} (toHit +{a.toHitMod}, dmg {a.damage})
+                      {a.name} (toHit +{a.hitorDC}, dmg {a.damage})
                     </option>
                   ))}
                 </select>
@@ -560,7 +560,7 @@ export default function BattleView({
                     (() => {
                       const a = pool.find((c) => c.id === (attackerId ?? activeId));
                       const attack = a?.attacks.find((x) => x.id === attackChoice) ?? a?.attacks[0];
-                      const toHit = attack?.toHitMod ?? 0;
+                      const toHit = attack?.hitorDC ?? 0;
                       const Extra = attackBonusInput;
                       return <span>d20{toHit != 0 && (toHit > 0 ? `+${toHit}` : `${toHit}`)}
                       {Extra !== "" && (!Extra.startsWith("+") && !Extra.startsWith("-") ? `+${Extra}` : Extra)}</span>;
@@ -687,8 +687,7 @@ export default function BattleView({
           )}
         </div>
       </div>
-      {/* <button className="btn-normal" onClick={() => setLog([])}> */}
-      <button className="btn-normal" onClick={() => console.log(rollDice("-4d4+4+1d6+3d10-1"))}>
+      <button className="btn-normal" onClick={() => setLog([])}>
             Clear log
       </button>
       {/* Settings + Log */}
@@ -765,11 +764,6 @@ export default function BattleView({
                           {e.passed ? "HIT" : "MISS"} {e.total}
                           <span className="opacity-70">
                             {" "}
-                            {/* (d20 {e.raw}
-                            {e.toHitMod >= 0
-                              ? `+${e.toHitMod}`
-                              : `${e.toHitMod}`}
-                            ) */}
                             {e.parts} 
                           </span>
                         </span>

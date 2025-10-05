@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import type { Combatant, TeamId, Status, Ability } from "../types";
+import type { Combatant, TeamId, Status, Ability, Attack } from "../types";
 import { saveState } from "../lib/storage";
 import { rollDice, d20 } from "../lib/dice"; // your dice roller
 
@@ -85,7 +85,7 @@ export default function RosterManager({ combatants, setCombatants }: Props) {
       hp: 10,
       maxHp: 10,
       initMod: 2,
-      attacks: [{ id: uid(), name: "Claw", toHitMod: 4, damage: "1d6+2" }],
+      attacks: [{ id: uid(), name: "Claw", hitorDC: 4, damage: "1d6+2" }],
     };
     const next = [c, ...combatants];
     setCombatants(next);
@@ -184,7 +184,11 @@ export default function RosterManager({ combatants, setCombatants }: Props) {
               </div>
               
               {/* General Stats */}
-              {activeTab === 'general' && (
+              <div
+                className={`transition-opacity duration-300 ${
+                  activeTab === 'general' ? 'opacity-100' : 'opacity-0 pointer-events-none h-0 overflow-hidden'
+                }`}
+              >
                 <div className="space-y-3">
                   <div className="flex flex-wrap justify-between items-center gap-2">
                     <div className="flex flex-wrap justify-between items-center gap-2">
@@ -294,11 +298,15 @@ export default function RosterManager({ combatants, setCombatants }: Props) {
                     />
                   </div>
                 </div>
-              )}
+              </div>
 
               
               {/* Ability Checks and Saving Throws */}
-              {activeTab === 'scores' && (
+              <div
+                className={`transition-opacity duration-300 ${
+                  activeTab === 'scores' ? 'opacity-100' : 'opacity-0 pointer-events-none h-0 overflow-hidden'
+                }`}
+              >
                 <div className="space-y-3">
                   {/* <label className="label">Abilities</label> */}
                   <div className="grid grid-cols-2">
@@ -402,11 +410,11 @@ export default function RosterManager({ combatants, setCombatants }: Props) {
                     {result}
                   </div>
                 </div>
-              )}
+              </div>
 
               <div>
-                <label className="label">Attacks</label>
-                <div className="space-y-2">
+                <label className="label">Actions</label>
+                <div className="flex flex-col gap-3 space-y-2">
                   {c.attacks.map((a) => (
                     <div key={a.id} className="flex flex-wrap items-center gap-2">
                       <input
@@ -421,23 +429,47 @@ export default function RosterManager({ combatants, setCombatants }: Props) {
                           })
                         }
                       />
-                      <span className="label">toHit</span>
-                      <input
-                        className="input w-20"
-                        type="number"
-                        value={a.toHitMod}
-                        onChange={(e) =>
-                          update({
-                            ...c,
-                            attacks: c.attacks.map((x) =>
-                              x.id === a.id
-                                ? { ...a, toHitMod: parseInt(e.target.value || "0", 10) }
-                                : x
-                            ),
-                          })
-                        }
-                      />
-                      <span className="label">dmg</span>
+                      <div className="flex flex-wrap justify-between items-center gap-2">
+                        <label className="label">Type</label>
+                        <select
+                          className="select"
+                          value={a.type}
+                          onChange={(e) =>
+                            update({
+                              ...c,
+                              attacks: c.attacks.map((x) =>
+                                x.id === a.id ? { ...a, type: e.target.value as Attack["type"]} : x
+                              ),
+                            })
+                          }
+                        >
+                          <option>Attack Roll</option>
+                          <option>Save DC</option>
+                          <option>Auto Hit</option>
+                          <option>Heal</option>
+                        </select>
+                      </div>
+                      {a.type !== "Auto Hit" && a.type !== "Heal" && (
+                        <div className="flex gap-2 items-center">
+                          <span className="label">{a.type === "Save DC" ? "DC" : "toHit"}</span>
+                          <input
+                            className="input w-20"
+                            type="number"
+                            value={a.hitorDC}
+                            onChange={(e) =>
+                              update({
+                                ...c,
+                                attacks: c.attacks.map((x) =>
+                                  x.id === a.id
+                                    ? { ...a, hitorDC: parseInt(e.target.value || "0", 10) }
+                                    : x
+                                ),
+                              })
+                            }
+                          />
+                        </div>
+                      )}
+                      <span className="label">{a.type === "Heal" ? "HP" : "Dmg"}</span>
                       <input
                         className="input w-24"
                         value={a.damage}
@@ -467,12 +499,12 @@ export default function RosterManager({ combatants, setCombatants }: Props) {
                         ...c,
                         attacks: [
                           ...c.attacks,
-                          { id: uid(), name: "New Attack", toHitMod: 0, damage: "1d6" },
+                          { id: uid(), name: "New Action", hitorDC: 0, damage: "1d6" },
                         ],
                       })
                     }
                   >
-                    + Add attack
+                    + Add Action
                   </button>
                 </div>
               </div>
