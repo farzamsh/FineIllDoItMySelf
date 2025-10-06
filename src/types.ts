@@ -16,6 +16,7 @@ export type Attack = {
   id: string;
   name: string;
   type?: "Attack Roll" | "Save DC" | "Auto Hit" | "Heal";
+  contested?: Ability | "";
   hitorDC: number;
   damage: string; // e.g. "1d8+3"
 };
@@ -70,6 +71,7 @@ export type LogEntry = {
   targetName: string;
   targetTeam: TeamId;
 
+  actionType: Attack["type"]
   hitorDC: number;
   raw: number;         // natural d20
   parts: string;       // details of roll

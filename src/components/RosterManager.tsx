@@ -1,33 +1,7 @@
 import React, { useMemo, useState } from "react";
 import type { Combatant, TeamId, Status, Ability, Attack } from "../types";
 import { saveState } from "../lib/storage";
-import { rollDice, d20 } from "../lib/dice"; // your dice roller
-
-function rollAbility(
-  c: Combatant,
-  ab: Ability,
-  type: "check" | "save",
-  bonusInput: string,
-  advMode: "normal" | "advantage" | "disadvantage"
-) {
-  const modifier = type === "check" ? c.checks?.[ab] ?? 0 : c.savingThrows?.[ab] ?? 0;
-
-  // roll d20 with adv/dis already handled by your helper
-  const roll = d20(modifier, advMode); // assume this returns { raw, total, parts }
-
-  // roll any extra bonus dice or number
-  const bonus = bonusInput ? rollDice(bonusInput) : { total: 0, parts: [] };
-
-  // final total
-  const total = roll.total + bonus.total;
-
-  const parts = [
-    ...(roll.parts || []),
-    ...(bonus.parts || [])
-  ].join("");
-
-  return `${ab} ${type}: ${total} ${parts}`;
-}
+import { rollAbility } from "../lib/dice"; // your dice roller
 
 
 
@@ -412,13 +386,13 @@ export default function RosterManager({ combatants, setCombatants }: Props) {
                 </div>
               </div>
 
-              <div>
-                <label className="label">Actions</label>
-                <div className="flex flex-col gap-3 space-y-2">
+              <div className="flex flex-col gap-2 space-y-2">
+                <label className="flex-1 py-1 text-sm font-medium rounded-t-md text-white border-b-2 border-indigo-500">Actions</label>
+                <div className="flex flex-col space-y-2">
                   {c.attacks.map((a) => (
-                    <div key={a.id} className="flex flex-wrap items-center gap-2">
+                    <div key={a.id} className="flex flex-wrap justify-between items-center gap-2 border-b rounded-t-md p-2 border-slate-700">
                       <input
-                        className="input w-36"
+                        className="input w-50"
                         value={a.name}
                         onChange={(e) =>
                           update({
@@ -438,7 +412,7 @@ export default function RosterManager({ combatants, setCombatants }: Props) {
                             update({
                               ...c,
                               attacks: c.attacks.map((x) =>
-                                x.id === a.id ? { ...a, type: e.target.value as Attack["type"]} : x
+                                x.id === a.id ? { ...a, type: e.target.value as Attack["type"], contested: e.target.value === "Save DC" ? "STR" as Ability : ""} : x
                               ),
                             })
                           }
@@ -469,26 +443,52 @@ export default function RosterManager({ combatants, setCombatants }: Props) {
                           />
                         </div>
                       )}
-                      <span className="label">{a.type === "Heal" ? "HP" : "Dmg"}</span>
-                      <input
-                        className="input w-24"
-                        value={a.damage}
-                        onChange={(e) =>
-                          update({
-                            ...c,
-                            attacks: c.attacks.map((x) =>
-                              x.id === a.id ? { ...a, damage: e.target.value } : x
-                            ),
-                          })
-                        }
-                      />
+                      <div className="flex gap-2 items-center">
+                        <span className="label">{a.type === "Heal" ? "HP" : "Dmg"}</span>
+                        <input
+                          className="input w-24"
+                          value={a.damage}
+                          onChange={(e) =>
+                            update({
+                              ...c,
+                              attacks: c.attacks.map((x) =>
+                                x.id === a.id ? { ...a, damage: e.target.value } : x
+                              ),
+                            })
+                          }
+                        />
+                      </div>
+                      {a.type === "Save DC" && (
+                        <div className="flex flex-wrap justify-between items-center gap-2">
+                          <label className="label">Contested</label>
+                          <select
+                            className="select"
+                            value={a.contested}
+                            onChange={(e) =>
+                              update({
+                                ...c,
+                                attacks: c.attacks.map((x) =>
+                                  x.id === a.id ? { ...a, contested: e.target.value as Ability} : x
+                                ),
+                              })
+                            }
+                          >
+                            <option>STR</option>
+                            <option>DEX</option>
+                            <option>CON</option>
+                            <option>INT</option>
+                            <option>WIS</option>
+                            <option>CHA</option>
+                          </select>
+                        </div>
+                      )}
                       <button
                         className="btn-red"
                         onClick={() =>
                           update({ ...c, attacks: c.attacks.filter((x) => x.id !== a.id) })
                         }
                       >
-                        Del
+                        Delete
                       </button>
                     </div>
                   ))}
@@ -499,7 +499,7 @@ export default function RosterManager({ combatants, setCombatants }: Props) {
                         ...c,
                         attacks: [
                           ...c.attacks,
-                          { id: uid(), name: "New Action", hitorDC: 0, damage: "1d6" },
+                          { id: uid(), name: "New Action", type: "Attack Roll", hitorDC: 0, damage: "1d6", contested: "AC" as Ability },
                         ],
                       })
                     }

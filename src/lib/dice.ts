@@ -1,3 +1,4 @@
+import { Ability, Combatant } from "../types";
 export type RollResult = { raw: number; total: number; parts: string[] }
 
 
@@ -54,4 +55,30 @@ const raw = base
 const total = base + mod
 const label = mode === 'advantage' ? `Adv(${r1},${r2})` : mode === 'disadvantage' ? `Dis(${r1},${r2})` : `${r1}`
 return { raw, total, parts: [`(d20 ${label}`, mod ? (mod > 0 ? `+${mod}` : `${mod}`) : '', ')'] }
+}
+
+export function rollAbility(
+  c: Combatant,
+  ab: Ability,
+  type: "check" | "save",
+  bonusInput: string,
+  advMode: "normal" | "advantage" | "disadvantage"
+) {
+  const modifier = type === "check" ? c.checks?.[ab] ?? 0 : c.savingThrows?.[ab] ?? 0;
+
+  // roll d20 with adv/dis already handled by your helper
+  const roll = d20(modifier, advMode); // assume this returns { raw, total, parts }
+
+  // roll any extra bonus dice or number
+  const bonus = bonusInput ? rollDice(bonusInput) : { total: 0, parts: [] };
+
+  // final total
+  const total = roll.total + bonus.total;
+
+  const parts = [
+    ...(roll.parts || []),
+    ...(bonus.parts || [])
+  ].join("");
+
+  return `${ab} ${type}: ${total} ${parts}`;
 }

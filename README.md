@@ -123,30 +123,38 @@ Stage 1: Making the app viable via essential mechanics and manual modifications
    - ✅ Cleaning the code and deleting the old format
    - ✅ UI improvment of the attack card
 4. ✅ Adding saving throws to character sheet
-5. Adding Attack types of attack roll, DC based and auto hit
+5. ✅ Adding Attack types of attack roll, DC based and auto hit
    - ✅ To the roster card
-   - To the action card
-6. Adding Multi choice Attack
+   - ✅ To the action card
+     - ✅ Auto Hit Logic & UI
+     - ✅ Save DC Logic & UI
+   - ✅ To the logs
+6. Adding Multi choice target in action card
 
 Stage 2: Providing smoother gameplay and UI
 
 1. Making the initiatives editable
-2. Adding type Heal to the actions
+2. ✅ Adding type Heal to the actions
    - ✅ To the roster card
-   - To the action card
-3. Hidden mode to hide enemies' HP and AC for Projection mode
+   - ✅ To the action card
+3. Hidden mode to hide enemies HP and AC for Projection mode
 4. Nat 1 and 20 implication on attack pass and damage
 5. Designing Button UIs
-6. Improving UI of roster cards on action section
+6. ✅ Improving UI of roster cards on action section
+7. Improving action card's UI
+8. Removing ac from target select box
+9. Adding ac or save modifier of the contested box
+10. Max hp input fix
 
 Stage 3: Improving overall layout and add a bit automation
 
 1. Designig different formats of attack and spell types
-2. Adding default weapons and spells
-3. Adding customable weapons and spells with ability to combine and corrolate(ones success adding another, different outcomes on fails)
-4. Adding Grapple, Shove as default actions and Athletic and Acrobatic checks to sheet
-5. Adding ability checks, proficiencies and advantages in them
-6. Building a whole turn section for each player turn with attacks, spells, slots and bonus actions
+2. Adding Multi choice attack on action card
+3. Adding default weapons and spells
+4. Adding customable weapons and spells with ability to combine and correlate(ones success adding another, different outcomes on fails)
+5. Adding Grapple, Shove as default actions and Athletic and Acrobatic checks to sheet
+6. Adding ability checks, proficiencies and advantages in them
+7. Building a whole turn section for each player turn with attacks, spells, slots and bonus actions
 
 Stage 4: Full character sheet and features and Maximum automation!
 
