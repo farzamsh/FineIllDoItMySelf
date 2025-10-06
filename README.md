@@ -215,6 +215,7 @@ _Exploring advanced features and community-driven development_
 - **Success Rate:** 35% complete
 
 ```mermaid
+%%{init: {'theme': 'forest'}}%%
 pie title Project Progress
     "Completed" : 9
     "In Progress" : 1
