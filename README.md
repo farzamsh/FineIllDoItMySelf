@@ -109,9 +109,9 @@ If you have ideas for new features or better UI for logs, feel free to open an i
 
 ---
 
-## 🗂️ Project Phases
+## 🗂️ Project Plans & Progress
 
-### Section 1: Core Combat Foundation
+### Phase 1: Core Combat Foundation
 
 **Stages 1-2** - Establishing the fundamental combat mechanics and user experience  
 _Building the essential framework for tactical encounters with intuitive controls and seamless gameplay flow_
@@ -142,22 +142,22 @@ _Laying the groundwork with essential combat features and flexible manual contro
 
 _Refining the interface and adding quality-of-life improvements for smoother sessions_
 
-1. **Pending** - Editable initiative tracking with manual adjustments
+1. Editable initiative tracking with manual adjustments
 2. ✅ Added healing action type
    - ✅ Integrated into roster management
    - ✅ Added to action card system
-3. **Pending** - Hidden mode for Game Master projection (concealing enemy HP/AC)
-4. **Pending** - Critical success/failure automation (Natural 1/20 effects)
-5. **Pending** - Unified button design system and visual consistency
+3. Hidden mode for Game Master projection (concealing enemy HP/AC)
+4. Critical success/failure automation (Natural 1/20 effects)
+5. Unified button design system and visual consistency
 6. ✅ Improved roster card layout in action sections
-7. **Pending** - Action card interface optimization and visual hierarchy
-8. **Pending** - Streamlined target selection (removed AC clutter)
-9. **Pending** - Display target AC and saving throw modifiers in combat interface
-10. **Pending** - Maximum HP input validation and data integrity
+7. Action card interface optimization and visual hierarchy
+8. Streamlined target selection (removed AC clutter)
+9. Display target AC and saving throw modifiers in combat interface
+10. Maximum HP input validation and data integrity
 
 ---
 
-### Section 2: Advanced Automation & Character Development
+### Phase 2: Advanced Automation & Character Development
 
 **Stages 3-4** - Expanding character capabilities and system automation  
 _Enhancing character depth with sophisticated actions, comprehensive sheets, and intelligent rule enforcement_
@@ -166,26 +166,26 @@ _Enhancing character depth with sophisticated actions, comprehensive sheets, and
 
 _Introducing complex combat options and foundational automation systems_
 
-1. **Pending** - Specialized templates for diverse attack and spell types
-2. **Pending** - Multi-attack sequences within single action cards
-3. **Pending** - Default weapon and spell libraries for quick setup
-4. **Pending** - Custom weapon/spell builder with conditional effects and combo systems
-5. **Pending** - Core combat maneuvers (Grapple, Shove) and associated skill checks
-6. **Pending** - Comprehensive ability check system with proficiency and advantage support
-7. **Pending** - Turn management system with action economy tracking
+1. Specialized templates for diverse attack and spell types
+2. Multi-attack sequences within single action cards
+3. Default weapon and spell libraries for quick setup
+4. Custom weapon/spell builder with conditional effects and combo systems
+5. Core combat maneuvers (Grapple, Shove) and associated skill checks
+6. Comprehensive ability check system with proficiency and advantage support
+7. Turn management system with action economy tracking
 
 #### Stage 4: Complete Character Automation & Feature Integration
 
 _Full character system implementation with automated rule enforcement and condition tracking_
 
-1. **Pending** - Complete character features and class ability integration
-2. **Pending** - Condition system with automated mechanical effects
-3. **Pending** - Feat, class, and subclass feature implementation and automation
-4. **Pending** - Inventory management with magical items, attunement, and charge tracking
+1. Complete character features and class ability integration
+2. Condition system with automated mechanical effects
+3. Feat, class, and subclass feature implementation and automation
+4. Inventory management with magical items, attunement, and charge tracking
 
 ---
 
-### Section 3: Multiplayer & Future Expansion
+### Phase 3: Multiplayer & Future Expansion
 
 **Stages 5+** - Enabling collaborative play and long-term growth  
 _Preparing for shared experiences with role-based access and laying groundwork for future innovations_
@@ -214,4 +214,4 @@ _Exploring advanced features and community-driven development_
 - **Pending:** 17 items
 - **Success Rate:** 35% complete
 
-_Last updated: $(Oct 7)_
+_Last updated: Oct 7_
