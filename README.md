@@ -214,4 +214,11 @@ _Exploring advanced features and community-driven development_
 - **Pending:** 17 items
 - **Success Rate:** 35% complete
 
+```mermaid
+pie title Project Progress
+    "Completed" : 9
+    "In Progress" : 1
+    "Pending" : 17
+```
+
 _Last updated: Oct 7_
