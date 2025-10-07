@@ -548,19 +548,20 @@ export default function BattleView({
       {/* --- Action card (replaces old Attacker/Attack/Target + Attack card) --- */}
       <div className="card space-y-4 mt-3">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between h-10">
           <div className="text-lg font-semibold">Action</div>
 
           <div className="flex items-center gap-3">
             {/* small red back button that steps stage back (UI-only) */}
-            <button
-              type="button"
-              className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-600 hover:bg-red-700 text-white text-sm"
-              onClick={() => setAttackStage((s) => (Math.max(1, s - 1) as 1 | 2 | 3))}
-              aria-label="back stage"
-            >
-              &lt;
-            </button>
+              <button
+                type="button"
+                className="btn-red btn-sm"
+                disabled={attackStage === 1 ? true : false}
+                onClick={() => setAttackStage((s) => (Math.max(1, s - 1) as 1 | 2 | 3))}
+                aria-label="back stage"
+              >
+                &lt;
+              </button>
 
             <div className="text-sm text-slate-400">Step {attackStage} of 3</div>
           </div>
@@ -618,12 +619,12 @@ export default function BattleView({
               </div>
               
               {attackChoice?.type === "Attack Roll" && (
-                <div className="flex-1 flex gap-2 items-end">
-                  <div className="min-w-20">
+                <div className="flex gap-2 items-end">
+                  <div className="flex flex-col justify-between min-w-20">
                     <label className="label">Extra bonus</label>
                     <input
                       type="text"
-                      className="input w-full"
+                      className="input w-full mt-2"
                       placeholder="Bonus (e.g. +2, 1d4-1)"
                       value={attackStage === 3 ? damageBonusInput : attackBonusInput}
                       onChange={(e) => {
@@ -633,15 +634,15 @@ export default function BattleView({
                       }}
                     />
                   </div>
-                  <div>
+                  <div className="flex flex-col justify-between">
                     <label className="label">Adv / Dis</label>
                     <button
-                      className={`btn w-16 text-center ${
+                      className={`btn btn-sm w-16 text-center mb-0.25 mt-2.5 ${
                         advantageMode === "advantage"
-                          ? "bg-green-600 text-white"
+                          ? "btn-green"
                           : advantageMode === "disadvantage"
-                          ? "bg-red-600 text-white"
-                          : "bg-slate-700 text-white"
+                          ? "btn-red"
+                          : "btn-normal"
                       }`}
                       onClick={() => {
                         setAdvantageMode((prev) =>
@@ -788,17 +789,17 @@ export default function BattleView({
               {attackChoice?.type !== "Auto Hit" && attackChoice?.type !== "Heal" && (
                 <div>
                   <label className="label">Contested</label>
-                  <input type="text"className="input w-full" value={attackChoice ? (`${attackChoice.contested ?? ""} ${attackChoice.type === "Save DC" ? "Save" : ""}`) : ""} disabled={true}></input>
+                  <input type="text"className="input w-full mt-2" value={attackChoice ? (`${attackChoice.contested ?? ""} ${attackChoice.type === "Save DC" ? "Save" : ""}`) : ""} disabled={true}></input>
                 </div>
               )}
               
               {attackChoice?.type === "Save DC" && (
-                <div className="flex-1 flex gap-2 items-end">
-                  <div className="min-w-20">
+                <div className="flex gap-2 items-end">
+                  <div className="flex flex-col justify-between min-w-20">
                     <label className="label">Extra bonus</label>
                     <input
                       type="text"
-                      className="input w-full"
+                      className="input w-full mt-2"
                       placeholder="Bonus"
                       value={attackStage === 3 ? targetDamageBonusInput : targetSaveBonusInput}
                       onChange={(e) => {
@@ -808,15 +809,15 @@ export default function BattleView({
                       }}
                     />
                   </div>
-                  <div>
+                  <div className="flex flex-col justify-between">
                     <label className="label">Adv / Dis</label>
                     <button
-                      className={`btn w-16 text-center ${
+                      className={`btn btn-sm w-16 text-center mb-0.25 mt-2.5 ${
                         targetAdvMode === "advantage"
-                          ? "bg-green-600 text-white"
+                          ? "btn-green"
                           : targetAdvMode === "disadvantage"
-                          ? "bg-red-600 text-white"
-                          : "bg-slate-700 text-white"
+                          ? "btn-red"
+                          : "btn-normal"
                       }`}
                       onClick={() => {
                         setTargetAdvMode((prev) =>
@@ -844,7 +845,7 @@ export default function BattleView({
           {attackStage === 1 && (
             <>
               <button
-                className="btn bg-indigo-600 hover:bg-indigo-700 text-white"
+                className="btn-main"
                 onClick={handleAttackRoll}
                 disabled={!attackChoice || !(attackerId ?? activeId) || !targetId}
               >
@@ -858,7 +859,7 @@ export default function BattleView({
           {attackStage === 2 && (
             <>
               <button
-                className="btn bg-indigo-600 hover:bg-indigo-700 text-white"
+                className="btn-main"
                 onClick={handleAttackApply} /* "Result" applies the extra so it's named Result */
                 disabled={!attackRoll && !targetSaveRoll}
               >
@@ -878,7 +879,7 @@ export default function BattleView({
           {attackStage === 3 && (
             <>
               <button
-                className="btn bg-indigo-600 hover:bg-indigo-700 text-white"
+                className="btn-main"
                 onClick={handleDamageApplyAndLog}
                 disabled={!attackRoll && !targetSaveRoll}
               >

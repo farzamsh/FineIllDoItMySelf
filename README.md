@@ -148,12 +148,27 @@ _Refining the interface and adding quality-of-life improvements for smoother ses
    - ✅ Added to action card system
 3. Hidden mode for Game Master projection (concealing enemy HP/AC)
 4. Critical success/failure automation (Natural 1/20 effects)
-5. Unified button design system and visual consistency
+5. ✅ Unified button design system and visual consistency
 6. ✅ Improved roster card layout in action sections
 7. Action card interface optimization and visual hierarchy
-8. Streamlined target selection (removed AC clutter)
-9. Display target AC and saving throw modifiers in combat interface
-10. Maximum HP input validation and data integrity
+
+#### Stage 2.5: Testing, Refinement & Technical Debt Resolution
+
+_Dedicated period for bug hunting, UI polish, code optimization, and addressing technical debt accumulated during rapid development_
+
+- Logic & Core Mechanics
+  1. Re-Roll button functionality
+  2. Seperate functions of different action type in each stage
+- Game Rule Compliance
+  1. Maximum HP input validation and data integrity
+- UI/UX Issues & Polish
+  1. Streamlined target selection (removed AC clutter)
+  2. Display target AC and saving throw modifiers in combat interface
+- Code Quality & Architecture
+  1. Component Refactoring of Battle View
+  2. Component Refactoring of Roster Manager
+  3. Remove deprecated legacy code
+  4. Consolidate duplicate utility functions
 
 ---
 
