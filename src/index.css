@@ -12,9 +12,6 @@ color-scheme: dark;
     /* @apply bg-slate-900/70 border border-slate-800 rounded-2xl p-4 shadow; */
     @apply border-slate-800 rounded-2xl p-4 shadow;
 }
-/* .btn {
-@apply inline-flex items-center justify-center rounded-xl px-3 py-2 border border-slate-700 bg-slate-800 hover:bg-slate-700 active:scale-95;
-} */
 .input {
     @apply bg-slate-900/60 border border-slate-700 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500;
     /* height: 42px; */
@@ -50,7 +47,7 @@ color-scheme: dark;
 }
 
 .btn-green {
-    @apply btn bg-green-900/30 border-green-800 text-green-300 hover:bg-green-800/60 hover:border-green-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-green-500;
+    @apply btn bg-emerald-900/30 border-emerald-800 text-emerald-300 hover:bg-emerald-800/60 hover:border-emerald-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500;
 }
 
 .btn-red {
@@ -66,10 +63,10 @@ color-scheme: dark;
     @apply btn bg-slate-800 text-white hover:bg-slate-700 border-slate-700;
 }
 .btn-green-solid {
-    @apply btn bg-green-600 text-white hover:bg-green-700 border-slate-700;
+    @apply btn bg-emerald-600 text-white hover:bg-emerald-700 border-slate-700;
 }
 .btn-red-solid {
-    @apply btn bg-red-600 text-white hover:bg-red-700 border-slate-700;
+    @apply btn bg-red-700 text-white hover:bg-red-800 border-slate-700;
 }
 
 

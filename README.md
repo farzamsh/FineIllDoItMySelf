@@ -133,10 +133,14 @@ _Laying the groundwork with essential combat features and flexible manual contro
 5. ✅ Implemented multiple attack types (Attack Roll, DC-based, Auto Hit)
    - ✅ Integrated into roster cards
    - ✅ Added to action cards
-     - ✅ Auto Hit logic and interface
-     - ✅ Save DC logic and interface
+   - ✅ Auto Hit logic and interface
+   - ✅ Save DC logic and interface
    - ✅ Updated combat log display
 6. **In Progress** - Multi-target selection for area effects and spells
+   - ✅ Unified and refactored Battle View state management system
+   - Implemented target addition/removal logic and integrated related components
+   - Developed action card duplication for added targets
+   - Modified three-stage functions for multi-target compatibility
 
 #### Stage 2: Enhanced User Experience & Gameplay Polish
 

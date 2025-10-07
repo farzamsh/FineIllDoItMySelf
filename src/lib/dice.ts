@@ -1,5 +1,5 @@
 import { Ability, Combatant } from "../types";
-export type RollResult = { raw: number; total: number; parts: string[] }
+export type RollResult = { raw?: number; total: number; parts: string[] }
 
 
 export function rollDice(notation: string): RollResult {

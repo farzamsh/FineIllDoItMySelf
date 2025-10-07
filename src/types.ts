@@ -1,3 +1,6 @@
+import { RollResult } from "./lib/dice";
+
+
 export type TeamId = 1 | 2 | 3 | 4 | 5;
 
 export type Status =
@@ -82,4 +85,28 @@ export type LogEntry = {
 
   damage?: number;     // present only on hit
   died?: boolean;      // target dropped to 0 HP
+};
+
+export type AttackState = {
+  id: string | null;
+  choice: Attack | null;
+  advMode: "normal" | "advantage" | "disadvantage";
+  bonusInput: string;
+  bonusRoll: RollResult | null;
+  damageBonusInput: string;
+  damageBonusRoll: RollResult | null;
+  roll: RollResult | null;
+  damageRoll: RollResult | null;
+  passed: boolean | null;
+};
+
+export type TargetState = {
+  id: string | null;
+  targetId: string | null;
+  advMode: "normal" | "advantage" | "disadvantage";
+  bonusInput: string;
+  bonusRoll: RollResult | null;
+  damageBonusInput: string;
+  damageBonusRoll: RollResult | null;
+  roll: RollResult | null;
 };
