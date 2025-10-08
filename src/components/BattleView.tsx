@@ -566,9 +566,10 @@ export default function BattleView({
         </div>
 
         {/* Action container: 3 equal columns */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 rounded-xl">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 rounded-xl bg-blue-950/30">
+
           {/* --- LEFT: Character card --- */}
-          <div className="p-3 rounded-xl flex flex-col justify-between">
+          <div className="p-3 mb-1 rounded-xl flex flex-col justify-between">
             <div>
               <label className="label">Character</label>
               <select
@@ -587,33 +588,8 @@ export default function BattleView({
             {/* bottom: Action select (half) + [bonus input | Adv | Dis] (other half) */}
             <div className="mt-3 flex gap-2">
               <div>
-                <label className="label">Action</label>
-                <select
-                  className="select w-full mt-2"
-                  value={attackState.choice?.id}
-                  onChange={(e) => {
-                    resetCard()
-                    const selectedId = e.target.value;
-                    const attacks = pool.find((c) => c.id === (attackerId ?? activeId))?.attacks ?? [];
-                    const selectedAttack = attacks.find(a => a.id === selectedId);
-                    if (selectedAttack) {
-                      setAttackState((p) => ({ ...p, choice: selectedAttack}));
-                    }
-                  }}
-                >
-                  {(
-                    pool.find((c) => c.id === (attackerId ?? activeId))?.attacks ?? []
-                  ).map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.name} (
-                      {a.type === "Attack Roll" ? `toHit +${a.hitorDC}, Dmg ${a.damage}` : 
-                      (a.type === "Auto Hit" ? `Dmg ${a.damage}` : 
-                      (a.type === "Save DC" ? `${a.hitorDC} DC, Dmg ${a.damage}, ${a.contested} Save` :
-                      (a.type === "Heal" ? `HP ${a.damage}` : "")
-                      ))})
-                    </option>
-                  ))}
-                </select>
+                <label className="label">Attack</label>
+                  <input type="text"className="input w-full mt-2" value={attackState.choice?.name} disabled={true}></input>
               </div>
               
               {attackState.choice?.type === "Attack Roll" && (
@@ -665,110 +641,141 @@ export default function BattleView({
           </div>
 
           {/* --- MIDDLE: Rolls display (Attack Roll / Damage Roll) --- */}
-          <div className="p-3 rounded-xl bg-slate-950/60 flex flex-col justify-around mt-2">
+          <div className="p-3 mb-1 rounded-xl flex flex-col justify-between">
             {/* labels row */}
-            <div className="flex items-center justify-around">
-              {attackState.choice?.type === "Attack Roll" && 
-              (<div className="text-xs text-slate-400">Attack Roll</div>)}
-              {attackState.choice?.type === "Save DC" && 
-              (<div className="text-xs text-slate-400">Saving Roll</div>)}
-              {attackState.choice?.type !== "Heal" ? (
-              <div className="text-xs text-slate-400">Damage Roll</div>) : (
-              <div className="text-xs text-slate-400">HP Roll</div>
-              )}
+            <div>
+              <label className="label">Action</label>
+              <select
+                className="select w-full mt-2"
+                value={attackState.choice?.id}
+                onChange={(e) => {
+                  resetCard()
+                  const selectedId = e.target.value;
+                  const attacks = pool.find((c) => c.id === (attackerId ?? activeId))?.attacks ?? [];
+                  const selectedAttack = attacks.find(a => a.id === selectedId);
+                  if (selectedAttack) {
+                    setAttackState((p) => ({ ...p, choice: selectedAttack}));
+                  }
+                }}
+              >
+                {(
+                  pool.find((c) => c.id === (attackerId ?? activeId))?.attacks ?? []
+                ).map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name} (
+                    {a.type === "Attack Roll" ? `toHit +${a.hitorDC}, Dmg ${a.damage}` : 
+                    (a.type === "Auto Hit" ? `Dmg ${a.damage}` : 
+                    (a.type === "Save DC" ? `${a.hitorDC} DC, Dmg ${a.damage}, ${a.contested} Save` :
+                    (a.type === "Heal" ? `HP ${a.damage}` : "")
+                    ))})
+                  </option>
+                ))}
+              </select>
             </div>
+            <div className="flex flex-col mt-2">
+              <div className="flex items-center justify-around mt-2">
+                {attackState.choice?.type === "Attack Roll" && 
+                (<div className="text-xs text-slate-400">Attack Roll</div>)}
+                {attackState.choice?.type === "Save DC" && 
+                (<div className="text-xs text-slate-400">Saving Roll</div>)}
+                {attackState.choice?.type !== "Heal" ? (
+                <div className="text-xs text-slate-400">Damage Roll</div>) : (
+                <div className="text-xs text-slate-400">HP Roll</div>
+                )}
+              </div>
 
-            {/* two lines area */}
-            <div className="mt-3 space-y-3">
-              {/* LINE 1: base expressions (always shown) */}
-              <div className="flex items-center justify-around">
-                {/* left: base attack expression */}
-                {attackState.choice?.type !== "Auto Hit" && attackState.choice?.type !== "Heal" && (
+              {/* two lines area */}
+              <div className="mt-3 space-y-3 rounded-xl bg-slate-950/60 pt-2.5 pb-2.5">
+                {/* LINE 1: base expressions (always shown) */}
+                <div className="flex items-center justify-around">
+                  {/* left: base attack expression */}
+                  {attackState.choice?.type !== "Auto Hit" && attackState.choice?.type !== "Heal" && (
+                    <div className="text-sm text-slate-200">
+                      {attackStage === 1 ? (
+                        (() => {
+                          const t = pool.find((c) => c.id === (targetState.targetId));
+                          const attack = attackState.choice;
+                          const toHit = attack?.type === "Attack Roll" 
+                            ? attack?.hitorDC ?? 0 
+                            : (attack?.contested ? t?.savingThrows?.[attack.contested] ?? 0 : 0);
+                          const Extra = attack?.type === "Attack Roll"
+                            ? attackState.bonusInput : targetState.bonusInput;
+                          return <span>d20{toHit != 0 && (toHit > 0 ? `+${toHit}` : `${toHit}`)}
+                          {Extra !== "" && (!Extra.startsWith("+") && !Extra.startsWith("-") ? `+${Extra}` : Extra)}</span>;
+                        })()
+                      ) : (
+                        // stage 2 or 3: show preview or final; include "Hit"/"Miss" prefix in stage 3
+                        (() => {
+                          if (attackState.choice?.type === "Attack Roll") {
+                            const bonusRoll = attackState.bonusRoll ?? { total: 0, parts: [] };
+                            const baseTotal = attackState.roll?.total ?? 0;
+                            const previewTotal = baseTotal + bonusRoll.total;
+
+                            const parts = [
+                              ...(attackState.roll?.parts || []),
+                              ...bonusRoll.parts
+                            ].join("");
+                            const prefix = attackStage === 3 ? (attackState.passed ? "Hit " : "Miss ") : "";
+                            return (
+                              <span className={`${attackStage === 3 ? (attackState.passed ? "text-green-400 font-semibold" : "text-red-400 font-semibold") : "text-slate-200"}`}>
+                                {prefix}{previewTotal ?? "-"} {parts ? `${parts}` : ""}
+                              </span>
+                            );
+                          } else {
+                            const bonusRoll = targetState.bonusRoll ?? { total: 0, parts: [] };
+                            const baseTotal = targetState.roll?.total ?? 0;
+                            const previewTotal = baseTotal + bonusRoll.total;
+                            
+                            const parts = [
+                              ...(targetState.roll?.parts || []),
+                              ...bonusRoll.parts
+                            ].join("");
+                            const prefix = attackStage === 3 ? (attackState.passed ? "Save " : "Fail ") : "";
+                            return (
+                              <span className={`${attackStage === 3 ? (attackState.passed ? "text-green-400 font-semibold" : "text-red-400 font-semibold") : "text-slate-200"}`}>
+                                {prefix}{previewTotal ?? "-"} {parts ? `${parts}` : ""}
+                              </span>
+                            );
+                          }
+                        })()
+                      )}
+                    </div>
+                  )}
+
+                  {/* right: base damage expression */}
                   <div className="text-sm text-slate-200">
-                    {attackStage === 1 ? (
+                    {attackStage === 3 ? (
+                      // stage 3: show damage roll and possible damage bonus preview
                       (() => {
-                        const t = pool.find((c) => c.id === (targetState.targetId));
-                        const attack = attackState.choice;
-                        const toHit = attack?.type === "Attack Roll" 
-                          ? attack?.hitorDC ?? 0 
-                          : (attack?.contested ? t?.savingThrows?.[attack.contested] ?? 0 : 0);
-                        const Extra = attack?.type === "Attack Roll"
-                          ? attackState.bonusInput : targetState.bonusInput;
-                        return <span>d20{toHit != 0 && (toHit > 0 ? `+${toHit}` : `${toHit}`)}
-                        {Extra !== "" && (!Extra.startsWith("+") && !Extra.startsWith("-") ? `+${Extra}` : Extra)}</span>;
+                        // const bonusDmgRoll = damageBonusInput ? rollDice(damageBonusInput) : { total: 0, parts: [] };
+                        const bonusDmgRoll = attackState.choice?.type !== "Save DC" 
+                          ? (attackState.damageBonusRoll ?? { total: 0, parts: [] }) 
+                          : (targetState.damageBonusRoll ?? { total: 0, parts: [] })
+                        const baseD = attackState.damageRoll?.total ?? 0;
+                        const total = baseD + bonusDmgRoll.total;
+                        
+                        const parts = [
+                          ...(attackState.damageRoll?.parts || []),
+                          ...(bonusDmgRoll.parts || [])
+                        ].join("");
+                        return <span>{total} ({parts})</span>;
                       })()
                     ) : (
-                      // stage 2 or 3: show preview or final; include "Hit"/"Miss" prefix in stage 3
                       (() => {
-                        if (attackState.choice?.type === "Attack Roll") {
-                          const bonusRoll = attackState.bonusRoll ?? { total: 0, parts: [] };
-                          const baseTotal = attackState.roll?.total ?? 0;
-                          const previewTotal = baseTotal + bonusRoll.total;
-
-                          const parts = [
-                            ...(attackState.roll?.parts || []),
-                            ...bonusRoll.parts
-                          ].join("");
-                          const prefix = attackStage === 3 ? (attackState.passed ? "Hit " : "Miss ") : "";
-                          return (
-                            <span className={`${attackStage === 3 ? (attackState.passed ? "text-green-400 font-semibold" : "text-red-400 font-semibold") : "text-slate-200"}`}>
-                              {prefix}{previewTotal ?? "-"} {parts ? `${parts}` : ""}
-                            </span>
-                          );
-                        } else {
-                          const bonusRoll = targetState.bonusRoll ?? { total: 0, parts: [] };
-                          const baseTotal = targetState.roll?.total ?? 0;
-                          const previewTotal = baseTotal + bonusRoll.total;
-                          
-                          const parts = [
-                            ...(targetState.roll?.parts || []),
-                            ...bonusRoll.parts
-                          ].join("");
-                          const prefix = attackStage === 3 ? (attackState.passed ? "Save " : "Fail ") : "";
-                          return (
-                            <span className={`${attackStage === 3 ? (attackState.passed ? "text-green-400 font-semibold" : "text-red-400 font-semibold") : "text-slate-200"}`}>
-                              {prefix}{previewTotal ?? "-"} {parts ? `${parts}` : ""}
-                            </span>
-                          );
-                        }
+                        const a = pool.find((c) => c.id === (attackerId ?? activeId));
+                        const attack = attackState.choice;
+                        return <span>{attack?.damage ?? "-"}</span>;
                       })()
                     )}
                   </div>
-                )}
-
-                {/* right: base damage expression */}
-                <div className="text-sm text-slate-200">
-                  {attackStage === 3 ? (
-                    // stage 3: show damage roll and possible damage bonus preview
-                    (() => {
-                      // const bonusDmgRoll = damageBonusInput ? rollDice(damageBonusInput) : { total: 0, parts: [] };
-                      const bonusDmgRoll = attackState.choice?.type !== "Save DC" 
-                        ? (attackState.damageBonusRoll ?? { total: 0, parts: [] }) 
-                        : (targetState.damageBonusRoll ?? { total: 0, parts: [] })
-                      const baseD = attackState.damageRoll?.total ?? 0;
-                      const total = baseD + bonusDmgRoll.total;
-                      
-                      const parts = [
-                        ...(attackState.damageRoll?.parts || []),
-                        ...(bonusDmgRoll.parts || [])
-                      ].join("");
-                      return <span>{total} ({parts})</span>;
-                    })()
-                  ) : (
-                    (() => {
-                      const a = pool.find((c) => c.id === (attackerId ?? activeId));
-                      const attack = attackState.choice;
-                      return <span>{attack?.damage ?? "-"}</span>;
-                    })()
-                  )}
                 </div>
-              </div>
 
+              </div>
             </div>
           </div>
 
           {/* --- RIGHT: Target card --- */}
-          <div className="p-3 rounded-xl flex flex-col justify-between">
+          <div className="p-3 mb-1 rounded-xl flex flex-col justify-between">
             <div>
               <label className="label">Target</label>
               <select

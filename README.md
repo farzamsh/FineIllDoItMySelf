@@ -154,7 +154,7 @@ _Refining the interface and adding quality-of-life improvements for smoother ses
 4. Critical success/failure automation (Natural 1/20 effects)
 5. ✅ Unified button design system and visual consistency
 6. ✅ Improved roster card layout in action sections
-7. Action card interface optimization and visual hierarchy
+7. ✅ Action card interface optimization and visual hierarchy
 
 #### Stage 2.5: Testing, Refinement & Technical Debt Resolution
 
