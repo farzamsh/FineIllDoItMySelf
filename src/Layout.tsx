@@ -2,7 +2,8 @@ import React, { useState } from "react";
 
 // NEW views
 import RosterManager from "./components/RosterManager";
-import BattleView from "./components/BattleView";
+import BattleView from "./components/battle/BattleView";
+// import BattleView from "./components/battle/BattleView";
 
 // Legacy views (keep working while you transition)
 import EncounterCards from "./components/EncounterCards";

@@ -138,6 +138,7 @@ _Laying the groundwork with essential combat features and flexible manual contro
    - ✅ Updated combat log display
 6. **In Progress** - Multi-target selection for area effects and spells
    - ✅ Unified and refactored Battle View state management system
+   - ✅ Refactored and organized components of Battle View
    - Implemented target addition/removal logic and integrated related components
    - Developed action card duplication for added targets
    - Modified three-stage functions for multi-target compatibility
@@ -163,6 +164,7 @@ _Dedicated period for bug hunting, UI polish, code optimization, and addressing 
 - Logic & Core Mechanics
   1. Re-Roll button functionality
   2. Seperate functions of different action type in each stage
+  3. Change battle view state management into single attack vs target states
 - Game Rule Compliance
   1. Maximum HP input validation and data integrity
 - UI/UX Issues & Polish
