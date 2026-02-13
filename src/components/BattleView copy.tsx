@@ -66,77 +66,81 @@ export default function BattleView({
     [pool]
   );
 
-  // --- NEW UNIFIED STATES ---
-  const [attackState, setAttackState] = useState<AttackState>({
-    id: null,
-    choice: null,
-    advMode: "normal",
-    bonusInput: "",
-    bonusRoll: null,
-    damageBonusInput: "",
-    damageBonusRoll: null,
-    roll: null,
-    damageRoll: null,
-    passed: null,
-  });
-
-  const [targetState, setTargetState] = useState<TargetState>({
-    id: null,
-    targetId: null,
-    advMode: "normal",
-    bonusInput: "",
-    bonusRoll: null,
-    damageBonusInput: "",
-    damageBonusRoll: null,
-    roll: null,
-  });
-  
+  // Attacker-side state
+  const [attackChoice, setattackChoice] = useState<Attack | null>(null);
   const [attackerId, setAttackerId] = useState<string | null>(null);
+  const [targetId, setTargetId] = useState<string | null>(null);
+  const [advantageMode, setAdvantageMode] = useState<"normal" | "advantage" | "disadvantage">("normal");
+
+  // Target-side state (for Save DC attacks)
+  const [targetSaveBonusInput, setTargetSaveBonusInput] = useState<string>("");
+  const [targetDamageBonusInput, setTargetDamageBonusInput] = useState<string>("");
+
+  const [targetAdvMode, setTargetAdvMode] = useState<"normal" | "advantage" | "disadvantage">("normal");
+  const [targetSaveRoll, setTargetSaveRoll] = useState<any | null>(null);
+
+  const [targetSaveBonusRoll, setTargetSaveBonusRoll] = useState<any | null>(null);
+  const [targetDamageBonusRoll, setTargetDamageBonusRoll] = useState<any | null>(null);
+
+  // ---------- Attack 3-step UI state ----------
   const [attackStage, setAttackStage] = useState<1 | 2 | 3>(1);
+
+  // Bonus Inputs
+  const [attackBonusInput, setAttackBonusInput] = useState<string>(""); // stage1 attack bonus input
+  const [damageBonusInput, setDamageBonusInput] = useState<string>(""); // stage3 damage bonus input
+
+  // Input Rolls
+  const [attackBonusRoll, setAttackBonusRoll] = useState<any | null>(null);
+  const [damageBonusRoll, setDamageBonusRoll] = useState<any | null>(null);
+
+  // Stored roll results
+  const [attackRoll, setAttackRoll] = useState<any | null>(null); // original d20 roll object from d20()
+  const [attackPassed, setAttackPassed] = useState<boolean | null>(null); // whether it hit (computed on Apply)
+  const [damageRoll, setDamageRoll] = useState<any | null>(null); // damage roll result (if any)
 
   // stage1 -> stage2
   function handleAttackRoll() {
     
-    const attack = attackState.choice;
+    const attack = attackChoice;
     if (!attack) return;
 
     if(attack.type !== "Heal" && attack.type !== "Auto Hit") {
       const currentAttackerId = attackerId ?? activeId;
       const atkOwner = pool.find((c) => c.id === currentAttackerId);
-      const tgt = pool.find((c) => c.id === targetState.targetId);
+      const tgt = pool.find((c) => c.id === targetId);
       if (!atkOwner || !tgt) return;
       
       if (attack.type !== "Attack Roll") {
         if (!attack.contested) return;
-        const roll = d20(tgt.savingThrows?.[attack.contested], targetState.advMode)
+        const roll = d20(tgt.savingThrows?.[attack.contested], targetAdvMode)
         // setAttackRoll(roll);
-        setTargetState((p) => ({ ...p, roll: roll}));
+        setTargetSaveRoll(roll)
       } else {
-        const roll = d20(attack.hitorDC, attackState.advMode);
-        setAttackState((p) => ({ ...p, roll: roll}));
+        const roll = d20(attack.hitorDC, advantageMode);
+        setAttackRoll(roll);
       }
     setAttackStage(2);
 
     } else {
-      console.log("1");
-      const roll: RollResult = { raw:0, total:0, parts:[]};
+      console.log("1")
+      const roll: RollResult = { raw:0, total:0, parts:[]}
       const dmg = rollDice(attack.damage);
-      setAttackState((p) => ({ ...p, roll: roll}));
-      setAttackState((p) => ({ ...p, damageRoll: dmg}));
-      setAttackState((p) => ({ ...p, passed: true}));
+      setAttackRoll(roll)
+      setDamageRoll(dmg);
+      setAttackPassed(true)
       setAttackStage(3);
-      console.log("2");
+      console.log("2")
     }
   }
   useEffect(() => {
-    const roll = attackState.bonusInput ? rollDice(attackState.bonusInput) : { total: 0, parts: [] };
-    setAttackState((p) => ({ ...p, bonusRoll: roll}));
-  }, [attackState.bonusInput]);
+    const roll = attackBonusInput ? rollDice(attackBonusInput) : { total: 0, parts: [] };
+    setAttackBonusRoll(roll);
+  }, [attackBonusInput]);
 
   useEffect(() => {
-    const roll = targetState.bonusInput ? rollDice(targetState.bonusInput) : { total: 0, parts: [] };
-    setTargetState((p) => ({ ...p, bonusRoll: roll}));
-  }, [targetState.bonusInput]);
+    const roll = targetSaveBonusInput ? rollDice(targetSaveBonusInput) : { total: 0, parts: [] };
+    setTargetSaveBonusRoll(roll);
+  }, [targetSaveBonusInput]);
 
   function handleAttackReroll() {
     // reroll using same attacker/attack and the stored pre-bonus
@@ -144,13 +148,13 @@ export default function BattleView({
     const atkOwner = pool.find((c) => c.id === currentAttackerId);
     if (!atkOwner) return;
 
-    const attack = attackState.choice;
+    const attack = attackChoice;
     if (!attack) return;
-    const roll = d20(attack.hitorDC, attackState.advMode);
-    setAttackState((p) => ({ ...p, roll: roll}));
-    setAttackState((p) => ({ ...p, passed: null}));
-    setAttackState((p) => ({ ...p, damageRoll: null}));
-    setAttackState((p) => ({ ...p, damageBonusInput: ""}));
+    const roll = d20(attack.hitorDC, advantageMode);
+    setAttackRoll(roll);
+    setAttackPassed(null);
+    setDamageRoll(null);
+    setDamageBonusInput("");
   }
 
   // stage2 -> stage3
@@ -158,63 +162,60 @@ export default function BattleView({
     // apply any stage-2 extra bonus to the existing roll, decide hit/miss, and move to stage 3
     const currentAttackerId = attackerId ?? activeId;
     const atkOwner = pool.find((c) => c.id === currentAttackerId);
-    const tgt = pool.find((c) => c.id === targetState.targetId);
-    const attack = attackState.choice;
+    const tgt = pool.find((c) => c.id === targetId);
+    const attack = attackChoice;
     if (!atkOwner || !tgt || !attack) return;
 
     if (attack.type === "Attack Roll") {
-      if (!attackState.roll) return;
+      if (!attackRoll) return;
 
-      const bonusRoll = attackState.bonusRoll ?? { total: 0, parts: [] };
-      const finalTotal = (attackState.roll.total ?? 0) + bonusRoll.total;
-      const mergedParts = [...(attackState.roll.parts || []), ...(bonusRoll.parts || [])];
-      setAttackState((p) => ({
-        ...p,
-        roll: {
-          ...p.roll,
-          total: (p.roll?.total ?? 0) + bonusRoll.total,
-          parts: mergedParts,
-        }
-      }));
-      setAttackState((p) => ({ ...p, bonusInput: ""}));
+      const bonusRoll = attackBonusRoll ?? { total: 0, parts: [] };
+      const finalTotal = (attackRoll.total ?? 0) + bonusRoll.total;
+      const mergedParts = [...(attackRoll.parts || []), ...(bonusRoll.parts || [])];
+      
+      setAttackRoll({
+        ...attackRoll,
+        total: (attackRoll.total ?? 0) + bonusRoll.total,
+        parts: mergedParts,
+      });
+      setAttackBonusInput("")
       const passed = finalTotal >= tgt.ac;
-      setAttackState((p) => ({ ...p, passed: passed}));
+      setAttackPassed(passed);
     } else {
-      if (!targetState.roll) return;
+      if (!targetSaveRoll) return;
 
-      const bonusRoll = targetState.bonusRoll ?? { total: 0, parts: [] };
-      const finalTotal = (targetState.roll.total ?? 0) + bonusRoll.total;
-      const mergedParts = [...(targetState.roll.parts || []), ...(bonusRoll.parts || [])];
-      setTargetState((p) => ({
-        ...p,
-        roll: {
-          total: (p.roll?.total ?? 0) + bonusRoll.total,
-          parts: mergedParts,
-        }
-      }));
-      setTargetState((p) => ({ ...p, bonusInput:""}));
+      const bonusRoll = targetSaveBonusRoll ?? { total: 0, parts: [] };
+      const finalTotal = (targetSaveRoll.total ?? 0) + bonusRoll.total;
+      const mergedParts = [...(targetSaveRoll.parts || []), ...(bonusRoll.parts || [])];
+      
+      setTargetSaveRoll({
+        ...targetSaveRoll,
+        total: (targetSaveRoll.total ?? 0) + bonusRoll.total,
+        parts: mergedParts,
+      });
+      setTargetSaveBonusInput("")
       const passed = finalTotal >= attack.hitorDC;
-      setAttackState((p) => ({ ...p, passed: passed})); // needs it's own state
+      setAttackPassed(passed); // needs it's own state
     }
     const dmg = rollDice(attack.damage);
-    setAttackState((p) => ({ ...p, damageRoll: dmg}));
+    setDamageRoll(dmg);
     setAttackStage(3);
   }
   useEffect(() => {
-    const roll = attackState.damageBonusInput ? rollDice(attackState.damageBonusInput) : { total: 0, parts: [] };
-    setAttackState((p) => ({ ...p, damageBonusRoll: roll}));
-  }, [attackState.damageBonusInput]);
+    const roll = damageBonusInput ? rollDice(damageBonusInput) : { total: 0, parts: [] };
+    setDamageBonusRoll(roll);
+  }, [damageBonusInput]);
 
   useEffect(() => {
-    const roll = targetState.damageBonusInput ? rollDice(targetState.damageBonusInput) : { total: 0, parts: [] };
-    setTargetState((p) => ({ ...p, damageBonusRoll: roll}));
-  }, [targetState.damageBonusInput]);
+    const roll = targetDamageBonusInput ? rollDice(targetDamageBonusInput) : { total: 0, parts: [] };
+    setTargetDamageBonusRoll(roll);
+  }, [targetDamageBonusInput]);
 
   function handleDamageApplyAndLog() {
     const currentAttackerId = attackerId ?? activeId;
     const atkOwner = pool.find((c) => c.id === currentAttackerId);
-    const tgt = pool.find((c) => c.id === targetState.targetId);
-    const attack = attackState.choice;
+    const tgt = pool.find((c) => c.id === targetId);
+    const attack = attackChoice;
     const actionType = attack?.type;
     if (!atkOwner || !tgt || !attack) return;
 
@@ -228,28 +229,28 @@ export default function BattleView({
 
 
     if (actionType !== "Save DC") {
-      if (!attackState.roll) return;
+      if (!attackRoll) return;
       // compute final attack total (may already be set)
-      const bonusRoll = attackState.bonusRoll ?? { total: 0, parts: [] };
-      finalTotal = (attackState.roll.total ?? 0) + bonusRoll.total;
-      rawDice = attackState.roll.raw ?? 0;
+      const bonusRoll = attackBonusRoll ?? { total: 0, parts: [] };
+      finalTotal = (attackRoll.total ?? 0) + bonusRoll.total;
+      rawDice = attackRoll.raw;
       
       // Build parts string: show original parts and appended extras so it's visible in log
       parts = [
-        ...(attackState.roll.parts || []),
+        ...(attackRoll.parts || []),
         ...(bonusRoll.parts || [])
       ].join("");
 
     } else {
-      if (!targetState.roll) return;
+      if (!targetSaveRoll) return;
       // compute final attack total (may already be set)
-      const bonusRoll = targetState.bonusRoll ?? { total: 0, parts: [] };
-      finalTotal = (targetState.roll.total ?? 0) + bonusRoll.total;
-      rawDice = targetState.roll.raw ?? 0;
+      const bonusRoll = targetSaveBonusRoll ?? { total: 0, parts: [] };
+      finalTotal = (targetSaveRoll.total ?? 0) + bonusRoll.total;
+      rawDice = targetSaveRoll.raw;
       
       // Build parts string: show original parts and appended extras so it's visible in log
       parts = [
-        ...(targetState.roll.parts || []),
+        ...(targetSaveRoll.parts || []),
         ...(bonusRoll.parts || [])
       ].join("");
     }
@@ -260,12 +261,12 @@ export default function BattleView({
     
 
     // const bonusDmgRoll = damageBonusInput ? rollDice(damageBonusInput) : { total: 0, parts: [] };
-    const bonusDmgRoll = actionType === "Save DC" ? (targetState.damageBonusRoll ?? { total: 0, parts: [] }) : (attackState.damageBonusRoll ?? { total: 0, parts: [] });
-    const dmgBase = actionType === "Save DC" ? (!attackState.passed ? (attackState.damageRoll?.total ?? 0) : 0) :(attackState.passed ? (attackState.damageRoll?.total ?? 0) : 0) ;
+    const bonusDmgRoll = actionType === "Save DC" ? (targetDamageBonusRoll ?? { total: 0, parts: [] }) : (damageBonusRoll ?? { total: 0, parts: [] });
+    const dmgBase = actionType === "Save DC" ? (!attackPassed ? (damageRoll?.total ?? 0) : 0) :(attackPassed ? (damageRoll?.total ?? 0) : 0) ;
     finalDamage = dmgBase + bonusDmgRoll.total;
-    console.log(targetState.damageBonusRoll, attackState.damageBonusRoll)
+    console.log(targetDamageBonusRoll, damageBonusRoll)
     console.log(bonusDmgRoll, dmgBase)
-    if (attackState.choice?.type === "Heal") {
+    if (attackChoice?.type === "Heal") {
       finalDamage = finalDamage * -1;
     }
     const hpAfter = applyDamage(tgt, finalDamage);
@@ -286,7 +287,7 @@ export default function BattleView({
       raw: rawDice,
       parts: parts,
       total: finalTotal ?? 0,
-      passed: !!attackState.passed,
+      passed: !!attackPassed,
       isCrit: rawDice === 20,
       isFumble: rawDice === 1,
       damage: finalDamage,
@@ -304,16 +305,16 @@ export default function BattleView({
   function resetCard() {
     
     setAttackStage(1);
-    setAttackState((p) => ({ ...p, damageRoll: null}));
-    setAttackState((p) => ({ ...p, passed: null}));
+    setDamageRoll(null);
+    setAttackPassed(null);
 
-    setAttackState((p) => ({ ...p, roll: null}));
-    setAttackState((p) => ({ ...p, bonusInput: ""}));
-    setAttackState((p) => ({ ...p, damageBonusInput: ""}));
+    setAttackRoll(null);
+    setAttackBonusInput("");
+    setDamageBonusInput("");
 
-    setTargetState((p) => ({ ...p, roll: null}));
-    setTargetState((p) => ({ ...p, bonusInput: ""}));
-    setTargetState((p) => ({ ...p, damageBonusInput: ""}));
+    setTargetSaveRoll(null);
+    setTargetSaveBonusInput("");
+    setTargetDamageBonusInput("");
   }
   
   function applyDamage(target: Combatant, amount: number) {
@@ -335,9 +336,9 @@ export default function BattleView({
     if (characterId) {
       const selectedCharacter = pool.find(c => c.id === characterId);
       const firstAttack = selectedCharacter?.attacks?.[0];
-      setAttackState((p) => ({ ...p, choice: firstAttack || null}));
+      setattackChoice(firstAttack || null);
     } else {
-      setAttackState((p) => ({ ...p, choice: null}));
+      setattackChoice(null);
     }
 
     resetCard()
@@ -386,7 +387,7 @@ export default function BattleView({
         attacker.attacks.find((a) => a.id === lastAtk) ??
         attacker.attacks[0] ??
         null;
-      setAttackState((p) => ({ ...p, choice: chosenAtk}));
+      setattackChoice(chosenAtk);
 
       // 3) choose last-used target, else an enemy team, else the first other creature
       const lastTgt = lastTargetByAttacker[activeId];
@@ -399,7 +400,7 @@ export default function BattleView({
         );
         chosenTarget = enemy?.id ?? pool.find((c) => c.id !== activeId)?.id ?? null;
       }
-      setTargetState((p) => ({ ...p, targetId: chosenTarget}));
+      setTargetId(chosenTarget);
     }
   }, [activeId, pool, lastAttackByAttacker, lastTargetByAttacker]);
 
@@ -567,10 +568,9 @@ export default function BattleView({
         </div>
 
         {/* Action container: 3 equal columns */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 rounded-xl bg-blue-950/30">
-
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 rounded-xl">
           {/* --- LEFT: Character card --- */}
-          <div className="p-3 mb-1 rounded-xl flex flex-col justify-between">
+          <div className="p-3 rounded-xl flex flex-col justify-between">
             <div>
               <label className="label">Character</label>
               <select
@@ -589,11 +589,36 @@ export default function BattleView({
             {/* bottom: Action select (half) + [bonus input | Adv | Dis] (other half) */}
             <div className="mt-3 flex gap-2">
               <div>
-                <label className="label">Attack</label>
-                  <input type="text"className="input w-full mt-2" value={attackState.choice?.name} disabled={true}></input>
+                <label className="label">Action</label>
+                <select
+                  className="select w-full mt-2"
+                  value={attackChoice?.id}
+                  onChange={(e) => {
+                    resetCard()
+                    const selectedId = e.target.value;
+                    const attacks = pool.find((c) => c.id === (attackerId ?? activeId))?.attacks ?? [];
+                    const selectedAttack = attacks.find(a => a.id === selectedId);
+                    if (selectedAttack) {
+                      setattackChoice(selectedAttack);
+                    }
+                  }}
+                >
+                  {(
+                    pool.find((c) => c.id === (attackerId ?? activeId))?.attacks ?? []
+                  ).map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name} (
+                      {a.type === "Attack Roll" ? `toHit +${a.hitorDC}, Dmg ${a.damage}` : 
+                      (a.type === "Auto Hit" ? `Dmg ${a.damage}` : 
+                      (a.type === "Save DC" ? `${a.hitorDC} DC, Dmg ${a.damage}, ${a.contested} Save` :
+                      (a.type === "Heal" ? `HP ${a.damage}` : "")
+                      ))})
+                    </option>
+                  ))}
+                </select>
               </div>
               
-              {attackState.choice?.type === "Attack Roll" && (
+              {attackChoice?.type === "Attack Roll" && (
                 <div className="flex gap-2 items-end">
                   <div className="flex flex-col justify-between min-w-20">
                     <label className="label">Extra bonus</label>
@@ -601,11 +626,11 @@ export default function BattleView({
                       type="text"
                       className="input w-full mt-2"
                       placeholder="Bonus (e.g. +2, 1d4-1)"
-                      value={attackStage === 3 ? attackState.damageBonusInput : attackState.bonusInput}
+                      value={attackStage === 3 ? damageBonusInput : attackBonusInput}
                       onChange={(e) => {
                         const v = e.target.value;
-                        if (attackStage === 3) setAttackState((p) => ({ ...p, damageBonusInput: v}));
-                        else setAttackState((p) => ({ ...p, bonusInput: v}));
+                        if (attackStage === 3) setDamageBonusInput(v);
+                        else setAttackBonusInput(v);
                       }}
                     />
                   </div>
@@ -613,27 +638,25 @@ export default function BattleView({
                     <label className="label">Adv / Dis</label>
                     <button
                       className={`btn btn-sm w-16 text-center mb-0.25 mt-2.5 ${
-                        attackState.advMode === "advantage"
+                        advantageMode === "advantage"
                           ? "btn-green"
-                          : attackState.advMode === "disadvantage"
+                          : advantageMode === "disadvantage"
                           ? "btn-red"
                           : "btn-normal"
                       }`}
                       onClick={() => {
-                        setAttackState((prev) => ({
-                          ...prev,
-                          advMode:
-                            prev.advMode === "normal"
-                              ? "advantage"
-                              : prev.advMode === "advantage"
-                              ? "disadvantage"
-                              : "normal"
-                      }));
+                        setAdvantageMode((prev) =>
+                          prev === "normal"
+                            ? "advantage"
+                            : prev === "advantage"
+                            ? "disadvantage"
+                            : "normal"
+                        );
                       }}
                     >
-                      {attackState.advMode === "normal" && "--"}
-                      {attackState.advMode === "advantage" && "Adv"}
-                      {attackState.advMode === "disadvantage" && "Dis"}
+                      {advantageMode === "normal" && "--"}
+                      {advantageMode === "advantage" && "Adv"}
+                      {advantageMode === "disadvantage" && "Dis"}
                     </button>
                   </div>
                 </div>
@@ -642,147 +665,116 @@ export default function BattleView({
           </div>
 
           {/* --- MIDDLE: Rolls display (Attack Roll / Damage Roll) --- */}
-          <div className="p-3 mb-1 rounded-xl flex flex-col justify-between">
+          <div className="p-3 rounded-xl bg-slate-950/60 flex flex-col justify-around mt-2">
             {/* labels row */}
-            <div>
-              <label className="label">Action</label>
-              <select
-                className="select w-full mt-2"
-                value={attackState.choice?.id}
-                onChange={(e) => {
-                  resetCard()
-                  const selectedId = e.target.value;
-                  const attacks = pool.find((c) => c.id === (attackerId ?? activeId))?.attacks ?? [];
-                  const selectedAttack = attacks.find(a => a.id === selectedId);
-                  if (selectedAttack) {
-                    setAttackState((p) => ({ ...p, choice: selectedAttack}));
-                  }
-                }}
-              >
-                {(
-                  pool.find((c) => c.id === (attackerId ?? activeId))?.attacks ?? []
-                ).map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.name} (
-                    {a.type === "Attack Roll" ? `toHit +${a.hitorDC}, Dmg ${a.damage}` : 
-                    (a.type === "Auto Hit" ? `Dmg ${a.damage}` : 
-                    (a.type === "Save DC" ? `${a.hitorDC} DC, Dmg ${a.damage}, ${a.contested} Save` :
-                    (a.type === "Heal" ? `HP ${a.damage}` : "")
-                    ))})
-                  </option>
-                ))}
-              </select>
+            <div className="flex items-center justify-around">
+              {attackChoice?.type === "Attack Roll" && 
+              (<div className="text-xs text-slate-400">Attack Roll</div>)}
+              {attackChoice?.type === "Save DC" && 
+              (<div className="text-xs text-slate-400">Saving Roll</div>)}
+              {attackChoice?.type !== "Heal" ? (
+              <div className="text-xs text-slate-400">Damage Roll</div>) : (
+              <div className="text-xs text-slate-400">HP Roll</div>
+              )}
             </div>
-            <div className="flex flex-col mt-2">
-              <div className="flex items-center justify-around mt-2">
-                {attackState.choice?.type === "Attack Roll" && 
-                (<div className="text-xs text-slate-400">Attack Roll</div>)}
-                {attackState.choice?.type === "Save DC" && 
-                (<div className="text-xs text-slate-400">Saving Roll</div>)}
-                {attackState.choice?.type !== "Heal" ? (
-                <div className="text-xs text-slate-400">Damage Roll</div>) : (
-                <div className="text-xs text-slate-400">HP Roll</div>
-                )}
-              </div>
 
-              {/* two lines area */}
-              <div className="mt-3 space-y-3 rounded-xl bg-slate-950/60 pt-2.5 pb-2.5">
-                {/* LINE 1: base expressions (always shown) */}
-                <div className="flex items-center justify-around">
-                  {/* left: base attack expression */}
-                  {attackState.choice?.type !== "Auto Hit" && attackState.choice?.type !== "Heal" && (
-                    <div className="text-sm text-slate-200">
-                      {attackStage === 1 ? (
-                        (() => {
-                          const t = pool.find((c) => c.id === (targetState.targetId));
-                          const attack = attackState.choice;
-                          const toHit = attack?.type === "Attack Roll" 
-                            ? attack?.hitorDC ?? 0 
-                            : (attack?.contested ? t?.savingThrows?.[attack.contested] ?? 0 : 0);
-                          const Extra = attack?.type === "Attack Roll"
-                            ? attackState.bonusInput : targetState.bonusInput;
-                          return <span>d20{toHit != 0 && (toHit > 0 ? `+${toHit}` : `${toHit}`)}
-                          {Extra !== "" && (!Extra.startsWith("+") && !Extra.startsWith("-") ? `+${Extra}` : Extra)}</span>;
-                        })()
-                      ) : (
-                        // stage 2 or 3: show preview or final; include "Hit"/"Miss" prefix in stage 3
-                        (() => {
-                          if (attackState.choice?.type === "Attack Roll") {
-                            const bonusRoll = attackState.bonusRoll ?? { total: 0, parts: [] };
-                            const baseTotal = attackState.roll?.total ?? 0;
-                            const previewTotal = baseTotal + bonusRoll.total;
-
-                            const parts = [
-                              ...(attackState.roll?.parts || []),
-                              ...bonusRoll.parts
-                            ].join("");
-                            const prefix = attackStage === 3 ? (attackState.passed ? "Hit " : "Miss ") : "";
-                            return (
-                              <span className={`${attackStage === 3 ? (attackState.passed ? "text-green-400 font-semibold" : "text-red-400 font-semibold") : "text-slate-200"}`}>
-                                {prefix}{previewTotal ?? "-"} {parts ? `${parts}` : ""}
-                              </span>
-                            );
-                          } else {
-                            const bonusRoll = targetState.bonusRoll ?? { total: 0, parts: [] };
-                            const baseTotal = targetState.roll?.total ?? 0;
-                            const previewTotal = baseTotal + bonusRoll.total;
-                            
-                            const parts = [
-                              ...(targetState.roll?.parts || []),
-                              ...bonusRoll.parts
-                            ].join("");
-                            const prefix = attackStage === 3 ? (attackState.passed ? "Save " : "Fail ") : "";
-                            return (
-                              <span className={`${attackStage === 3 ? (attackState.passed ? "text-green-400 font-semibold" : "text-red-400 font-semibold") : "text-slate-200"}`}>
-                                {prefix}{previewTotal ?? "-"} {parts ? `${parts}` : ""}
-                              </span>
-                            );
-                          }
-                        })()
-                      )}
-                    </div>
-                  )}
-
-                  {/* right: base damage expression */}
+            {/* two lines area */}
+            <div className="mt-3 space-y-3">
+              {/* LINE 1: base expressions (always shown) */}
+              <div className="flex items-center justify-around">
+                {/* left: base attack expression */}
+                {attackChoice?.type !== "Auto Hit" && attackChoice?.type !== "Heal" && (
                   <div className="text-sm text-slate-200">
-                    {attackStage === 3 ? (
-                      // stage 3: show damage roll and possible damage bonus preview
+                    {attackStage === 1 ? (
                       (() => {
-                        // const bonusDmgRoll = damageBonusInput ? rollDice(damageBonusInput) : { total: 0, parts: [] };
-                        const bonusDmgRoll = attackState.choice?.type !== "Save DC" 
-                          ? (attackState.damageBonusRoll ?? { total: 0, parts: [] }) 
-                          : (targetState.damageBonusRoll ?? { total: 0, parts: [] })
-                        const baseD = attackState.damageRoll?.total ?? 0;
-                        const total = baseD + bonusDmgRoll.total;
-                        
-                        const parts = [
-                          ...(attackState.damageRoll?.parts || []),
-                          ...(bonusDmgRoll.parts || [])
-                        ].join("");
-                        return <span>{total} ({parts})</span>;
+                        const t = pool.find((c) => c.id === (targetId));
+                        const attack = attackChoice;
+                        const toHit = attack?.type === "Attack Roll" 
+                          ? attack?.hitorDC ?? 0 
+                          : (attack?.contested ? t?.savingThrows?.[attack.contested] ?? 0 : 0);
+                        const Extra = attack?.type === "Attack Roll"
+                          ? attackBonusInput : targetSaveBonusInput;
+                        return <span>d20{toHit != 0 && (toHit > 0 ? `+${toHit}` : `${toHit}`)}
+                        {Extra !== "" && (!Extra.startsWith("+") && !Extra.startsWith("-") ? `+${Extra}` : Extra)}</span>;
                       })()
                     ) : (
+                      // stage 2 or 3: show preview or final; include "Hit"/"Miss" prefix in stage 3
                       (() => {
-                        const a = pool.find((c) => c.id === (attackerId ?? activeId));
-                        const attack = attackState.choice;
-                        return <span>{attack?.damage ?? "-"}</span>;
+                        if (attackChoice?.type === "Attack Roll") {
+                          const bonusRoll = attackBonusRoll ?? { total: 0, parts: [] };
+                          const baseTotal = attackRoll?.total ?? 0;
+                          const previewTotal = baseTotal + bonusRoll.total;
+
+                          const parts = [
+                            ...(attackRoll?.parts || []),
+                            ...bonusRoll.parts
+                          ].join("");
+                          const prefix = attackStage === 3 ? (attackPassed ? "Hit " : "Miss ") : "";
+                          return (
+                            <span className={`${attackStage === 3 ? (attackPassed ? "text-green-400 font-semibold" : "text-red-400 font-semibold") : "text-slate-200"}`}>
+                              {prefix}{previewTotal ?? "-"} {parts ? `${parts}` : ""}
+                            </span>
+                          );
+                        } else {
+                          const bonusRoll = targetSaveBonusRoll ?? { total: 0, parts: [] };
+                          const baseTotal = targetSaveRoll?.total ?? 0;
+                          const previewTotal = baseTotal + bonusRoll.total;
+                          
+                          const parts = [
+                            ...(targetSaveRoll?.parts || []),
+                            ...bonusRoll.parts
+                          ].join("");
+                          const prefix = attackStage === 3 ? (attackPassed ? "Save " : "Fail ") : "";
+                          return (
+                            <span className={`${attackStage === 3 ? (attackPassed ? "text-green-400 font-semibold" : "text-red-400 font-semibold") : "text-slate-200"}`}>
+                              {prefix}{previewTotal ?? "-"} {parts ? `${parts}` : ""}
+                            </span>
+                          );
+                        }
                       })()
                     )}
                   </div>
-                </div>
+                )}
 
+                {/* right: base damage expression */}
+                <div className="text-sm text-slate-200">
+                  {attackStage === 3 ? (
+                    // stage 3: show damage roll and possible damage bonus preview
+                    (() => {
+                      // const bonusDmgRoll = damageBonusInput ? rollDice(damageBonusInput) : { total: 0, parts: [] };
+                      const bonusDmgRoll = attackChoice?.type !== "Save DC" 
+                        ? (damageBonusRoll ?? { total: 0, parts: [] }) 
+                        : (targetDamageBonusRoll ?? { total: 0, parts: [] })
+                      const baseD = damageRoll?.total ?? 0;
+                      const total = baseD + bonusDmgRoll.total;
+                      
+                      const parts = [
+                        ...(damageRoll?.parts || []),
+                        ...(bonusDmgRoll.parts || [])
+                      ].join("");
+                      return <span>{total} ({parts})</span>;
+                    })()
+                  ) : (
+                    (() => {
+                      const a = pool.find((c) => c.id === (attackerId ?? activeId));
+                      const attack = attackChoice;
+                      return <span>{attack?.damage ?? "-"}</span>;
+                    })()
+                  )}
+                </div>
               </div>
+
             </div>
           </div>
 
           {/* --- RIGHT: Target card --- */}
-          <div className="p-3 mb-1 rounded-xl flex flex-col justify-between">
+          <div className="p-3 rounded-xl flex flex-col justify-between">
             <div>
               <label className="label">Target</label>
               <select
                 className="select w-full mt-2"
-                value={targetState.targetId ?? ""}
-                onChange={(e) => setTargetState((p) => ({ ...p, targetId: e.target.value || null}))}
+                value={targetId ?? ""}
+                onChange={(e) => setTargetId(e.target.value || null)}
               >
                 {pool.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -794,14 +786,14 @@ export default function BattleView({
 
             {/* lower area intentionally left blank per your spec */}
             <div className="mt-3 flex gap-2">
-              {attackState.choice?.type !== "Auto Hit" && attackState.choice?.type !== "Heal" && (
+              {attackChoice?.type !== "Auto Hit" && attackChoice?.type !== "Heal" && (
                 <div>
                   <label className="label">Contested</label>
-                  <input type="text"className="input w-full mt-2" value={attackState.choice ? (`${attackState.choice.contested ?? ""} ${attackState.choice.type === "Save DC" ? "Save" : ""}`) : ""} disabled={true}></input>
+                  <input type="text"className="input w-full mt-2" value={attackChoice ? (`${attackChoice.contested ?? ""} ${attackChoice.type === "Save DC" ? "Save" : ""}`) : ""} disabled={true}></input>
                 </div>
               )}
               
-              {attackState.choice?.type === "Save DC" && (
+              {attackChoice?.type === "Save DC" && (
                 <div className="flex gap-2 items-end">
                   <div className="flex flex-col justify-between min-w-20">
                     <label className="label">Extra bonus</label>
@@ -809,11 +801,11 @@ export default function BattleView({
                       type="text"
                       className="input w-full mt-2"
                       placeholder="Bonus"
-                      value={attackStage === 3 ? targetState.damageBonusInput : targetState.bonusInput}
+                      value={attackStage === 3 ? targetDamageBonusInput : targetSaveBonusInput}
                       onChange={(e) => {
                         const v = e.target.value;
-                        if (attackStage === 3) setTargetState((p) => ({ ...p, damageBonusInput: v}));
-                        else setTargetState((p) => ({ ...p, bonusInput: v}));
+                        if (attackStage === 3) setTargetDamageBonusInput(v);
+                        else setTargetSaveBonusInput(v);
                       }}
                     />
                   </div>
@@ -821,27 +813,25 @@ export default function BattleView({
                     <label className="label">Adv / Dis</label>
                     <button
                       className={`btn btn-sm w-16 text-center mb-0.25 mt-2.5 ${
-                        targetState.advMode === "advantage"
+                        targetAdvMode === "advantage"
                           ? "btn-green"
-                          : targetState.advMode === "disadvantage"
+                          : targetAdvMode === "disadvantage"
                           ? "btn-red"
                           : "btn-normal"
                       }`}
                       onClick={() => {
-                        setTargetState((prev) => ({
-                          ...prev,
-                          advMode:
-                            prev.advMode === "normal"
-                              ? "advantage"
-                              : prev.advMode === "advantage"
-                              ? "disadvantage"
-                              : "normal"
-                      }));
+                        setTargetAdvMode((prev) =>
+                          prev === "normal"
+                            ? "advantage"
+                            : prev === "advantage"
+                            ? "disadvantage"
+                            : "normal"
+                        );
                       }}
                     >
-                      {targetState.advMode === "normal" && "--"}
-                      {targetState.advMode === "advantage" && "Adv"}
-                      {targetState.advMode === "disadvantage" && "Dis"}
+                      {targetAdvMode === "normal" && "--"}
+                      {targetAdvMode === "advantage" && "Adv"}
+                      {targetAdvMode === "disadvantage" && "Dis"}
                     </button>
                   </div>
                 </div>
@@ -857,7 +847,7 @@ export default function BattleView({
               <button
                 className="btn-main"
                 onClick={handleAttackRoll}
-                disabled={!attackState.choice || !(attackerId ?? activeId) || !targetState.targetId}
+                disabled={!attackChoice || !(attackerId ?? activeId) || !targetId}
               >
                 Roll for Action
               </button>
@@ -871,7 +861,7 @@ export default function BattleView({
               <button
                 className="btn-main"
                 onClick={handleAttackApply} /* "Result" applies the extra so it's named Result */
-                disabled={!attackState.roll && !targetState.roll}
+                disabled={!attackRoll && !targetSaveRoll}
               >
                 See Result
               </button>
@@ -879,7 +869,7 @@ export default function BattleView({
               <button
                 className="btn-normal"
                 onClick={handleAttackReroll}
-                disabled={!attackState.roll}
+                disabled={!attackRoll}
               >
                 Reroll
               </button>
@@ -891,7 +881,7 @@ export default function BattleView({
               <button
                 className="btn-main"
                 onClick={handleDamageApplyAndLog}
-                disabled={!attackState.roll && !targetState.roll}
+                disabled={!attackRoll && !targetSaveRoll}
               >
                 Apply Action
               </button>
@@ -902,9 +892,8 @@ export default function BattleView({
       </div>
       {/* <button className="btn-normal" onClick={() => setLog([])}> */}
       <button className="btn-normal" onClick={() => {
-        console.log(attackState.choice)
+        console.log(attackChoice)
         console.log(attackerId)
-        console.log(targetState.targetId)
         }}
       >
         Clear log

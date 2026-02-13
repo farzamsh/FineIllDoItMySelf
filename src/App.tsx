@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import type { AppState, Combatant } from "./types";
+import { LogEntry, type AppState, type Combatant } from "./types";
 import { loadState, saveState } from "./lib/storage";
 import Layout from "./Layout";
 
@@ -7,6 +7,7 @@ const INITIAL: AppState = {
   combatants: [],
   round: 1,
   activeId: null,
+  log: [],
 };
 
 export default function App() {
@@ -17,11 +18,14 @@ export default function App() {
   const [activeId, setActiveId] = useState<string | null>(
     loadState(INITIAL).activeId
   );
+  const [log, setLog] = useState<LogEntry[]>(
+    loadState(INITIAL).log ?? []
+  );
 
   // Keep localStorage fresh on any change
   useEffect(() => {
-    saveState({ combatants, round, activeId });
-  }, [combatants, round, activeId]);
+    saveState({ combatants, round, activeId, log });
+  }, [combatants, round, activeId, log]);
 
   // Seed with a sample encounter (optional)
   const hasNoData = useMemo(() => combatants.length === 0, [combatants.length]);
@@ -38,7 +42,7 @@ export default function App() {
           initMod: 3,
           status: ["Normal"],
           attacks: [
-            { id: "atk1", name: "Longsword", toHitMod: 5, damage: "1d8+3" },
+            { id: "atk1", name: "Longsword", hitorDC: 5, damage: "1d8+3" },
           ],
         },
         {
@@ -51,12 +55,12 @@ export default function App() {
           initMod: 2,
           status: ["Normal"],
           attacks: [
-            { id: "atk2", name: "Scimitar", toHitMod: 4, damage: "1d6+2" },
+            { id: "atk2", name: "Scimitar", hitorDC: 4, damage: "1d6+2" },
           ],
         },
       ];
       setCombatants(sample);
-      saveState({ combatants: sample, round: 1, activeId: null });
+      saveState({ combatants: sample, round: 1, activeId: null, log: [] });
     }
   }, [hasNoData]);
 
@@ -68,6 +72,8 @@ export default function App() {
       setRound={setRound}
       activeId={activeId}
       setActiveId={setActiveId}
+      log={log}
+      setLog={setLog}
     />
   );
 }

@@ -1,3 +1,6 @@
+import { RollResult } from "./lib/dice";
+
+
 export type TeamId = 1 | 2 | 3 | 4 | 5;
 
 export type Status =
@@ -15,9 +18,15 @@ export type Status =
 export type Attack = {
   id: string;
   name: string;
-  toHitMod: number;
+  type?: "Attack Roll" | "Save DC" | "Auto Hit" | "Heal";
+  contested?: Ability | "";
+  hitorDC: number;
   damage: string; // e.g. "1d8+3"
 };
+
+export type Ability = "STR" | "DEX" | "CON" | "INT" | "WIS" | "CHA";
+
+export type AbilityScores = Record<Ability, number>;
 
 export type Combatant = {
   id: string;
@@ -33,12 +42,17 @@ export type Combatant = {
   initMod: number;
   initiative?: number;
   attacks: Attack[];
+
+  abilityScores?: AbilityScores;
+  savingThrows?: Partial<AbilityScores>;
+  checks?: Partial<AbilityScores>;
 };
 
 export type AppState = {
   combatants: Combatant[];
   round: number;
   activeId: string | null;
+  log: LogEntry[];
 };
 
 /** UI prefs for the battle log */
@@ -60,8 +74,10 @@ export type LogEntry = {
   targetName: string;
   targetTeam: TeamId;
 
-  toHitMod: number;
+  actionType: Attack["type"]
+  hitorDC: number;
   raw: number;         // natural d20
+  parts: string;       // details of roll
   total: number;       // raw + mod
   passed: boolean;     // hit or miss
   isCrit: boolean;     // nat 20
@@ -69,4 +85,28 @@ export type LogEntry = {
 
   damage?: number;     // present only on hit
   died?: boolean;      // target dropped to 0 HP
+};
+
+export type AttackState = {
+  id: string | null;
+  choice: Attack | null;
+  advMode: "normal" | "advantage" | "disadvantage";
+  bonusInput: string;
+  bonusRoll: RollResult | null;
+  damageBonusInput: string;
+  damageBonusRoll: RollResult | null;
+  roll: RollResult | null;
+  damageRoll: RollResult | null;
+  passed: boolean | null;
+};
+
+export type TargetState = {
+  id: string | null;
+  targetId: string | null;
+  advMode: "normal" | "advantage" | "disadvantage";
+  bonusInput: string;
+  bonusRoll: RollResult | null;
+  damageBonusInput: string;
+  damageBonusRoll: RollResult | null;
+  roll: RollResult | null;
 };
